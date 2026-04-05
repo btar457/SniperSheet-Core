@@ -3,13 +3,17 @@ info:
   # Do not change the title, if the title changes, the import paths will be broken
   title: Api
   version: 0.1.0
-  description: API specification
+  description: Excel Add-in API
 servers:
   - url: /api
     description: Base API path
 tags:
   - name: health
     description: Health operations
+  - name: commands
+    description: Excel command operations
+  - name: cells
+    description: Cell dimension operations
 paths:
   /healthz:
     get:
@@ -24,6 +28,101 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/HealthStatus"
+
+  /commands/execute:
+    post:
+      operationId: executeCommand
+      tags: [commands]
+      summary: Execute a spreadsheet command
+      description: Interprets and executes commands like Sum, Multiply, Average, Min, Max on provided values
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ExecuteCommandBody"
+      responses:
+        "200":
+          description: Command result
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CommandResult"
+        "400":
+          description: Invalid command or values
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /commands/history:
+    get:
+      operationId: getCommandHistory
+      tags: [commands]
+      summary: Get command history
+      description: Returns the last 20 executed commands with their results
+      responses:
+        "200":
+          description: Command history list
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/CommandHistoryItem"
+
+  /cells/dimensions:
+    post:
+      operationId: calculateCellDimensions
+      tags: [cells]
+      summary: Calculate cell dimensions
+      description: Calculates the optimal width and height for a cell based on text content and font settings
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CellDimensionRequest"
+      responses:
+        "200":
+          description: Calculated dimensions
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CellDimensions"
+        "400":
+          description: Invalid input
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /cells/batch-dimensions:
+    post:
+      operationId: calculateBatchCellDimensions
+      tags: [cells]
+      summary: Calculate dimensions for multiple cells
+      description: Calculates optimal dimensions for a batch of cells based on their text content
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/BatchCellDimensionRequest"
+      responses:
+        "200":
+          description: Batch dimension results
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/BatchCellDimensions"
+        "400":
+          description: Invalid input
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
 components:
   schemas:
     HealthStatus:
@@ -34,3 +133,164 @@ components:
       required:
         - status
 
+    ExecuteCommandBody:
+      type: object
+      properties:
+        command:
+          type: string
+          description: The command to execute (e.g., "Sum", "Multiply", "Average", "Min", "Max", "Subtract", "Divide")
+        values:
+          type: array
+          items:
+            type: number
+          description: The numeric values to operate on
+        cellRange:
+          type: ["string", "null"]
+          description: Optional cell range reference (e.g., "A1:C3")
+      required:
+        - command
+        - values
+
+    CommandResult:
+      type: object
+      properties:
+        command:
+          type: string
+        result:
+          type: number
+        formula:
+          type: string
+          description: The formula string representation
+        description:
+          type: string
+      required:
+        - command
+        - result
+        - formula
+        - description
+
+    CommandHistoryItem:
+      type: object
+      properties:
+        id:
+          type: integer
+        command:
+          type: string
+        values:
+          type: array
+          items:
+            type: number
+        result:
+          type: number
+        formula:
+          type: string
+        cellRange:
+          type: ["string", "null"]
+        executedAt:
+          type: string
+          format: date-time
+      required:
+        - id
+        - command
+        - values
+        - result
+        - formula
+        - cellRange
+        - executedAt
+
+    CellDimensionRequest:
+      type: object
+      properties:
+        text:
+          type: string
+          description: The text content of the cell
+        fontSize:
+          type: ["integer", "null"]
+          description: Font size in points (default 11)
+        bold:
+          type: ["boolean", "null"]
+          description: Whether the text is bold
+        padding:
+          type: ["integer", "null"]
+          description: Cell padding in pixels (default 8)
+        maxWidth:
+          type: ["integer", "null"]
+          description: Maximum cell width in pixels
+        wrapText:
+          type: ["boolean", "null"]
+          description: Whether to wrap text (affects height calculation)
+      required:
+        - text
+
+    CellDimensions:
+      type: object
+      properties:
+        width:
+          type: integer
+          description: Calculated cell width in pixels
+        height:
+          type: integer
+          description: Calculated cell height in pixels
+        widthExcel:
+          type: number
+          description: Width in Excel column units
+        heightExcel:
+          type: number
+          description: Height in Excel row units (points)
+        characterCount:
+          type: integer
+        lineCount:
+          type: integer
+      required:
+        - width
+        - height
+        - widthExcel
+        - heightExcel
+        - characterCount
+        - lineCount
+
+    BatchCellDimensionRequest:
+      type: object
+      properties:
+        cells:
+          type: array
+          items:
+            $ref: "#/components/schemas/CellDimensionRequest"
+        uniformWidth:
+          type: ["boolean", "null"]
+          description: If true, returns the max width for all cells
+        uniformHeight:
+          type: ["boolean", "null"]
+          description: If true, returns the max height for all cells
+      required:
+        - cells
+
+    BatchCellDimensions:
+      type: object
+      properties:
+        results:
+          type: array
+          items:
+            $ref: "#/components/schemas/CellDimensions"
+        maxWidth:
+          type: integer
+        maxHeight:
+          type: integer
+        recommendedWidth:
+          type: integer
+        recommendedHeight:
+          type: integer
+      required:
+        - results
+        - maxWidth
+        - maxHeight
+        - recommendedWidth
+        - recommendedHeight
+
+    ErrorResponse:
+      type: object
+      properties:
+        error:
+          type: string
+      required:
+        - error

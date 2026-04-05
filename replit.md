@@ -16,6 +16,21 @@ pnpm workspace monorepo using TypeScript. Each package manages its own dependenc
 - **API codegen**: Orval (from OpenAPI spec)
 - **Build**: esbuild (CJS bundle)
 
+## Artifacts
+
+### Excel Add-in (`artifacts/excel-addin`)
+- React + Vite frontend styled as an Excel task pane
+- Side-panel UI with two tabs: **Commands** and **Dimensions**
+- Preview path: `/`
+
+### API Server (`artifacts/api-server`)
+- Express 5 backend serving `/api`
+- Routes:
+  - `POST /api/commands/execute` — Interprets commands (Sum, Multiply, Average, Min, Max, Subtract, Divide) on provided values
+  - `GET /api/commands/history` — Returns last 20 executed commands
+  - `POST /api/cells/dimensions` — Calculates cell width/height from text content and font settings
+  - `POST /api/cells/batch-dimensions` — Batch cell dimension calculation
+
 ## Key Commands
 
 - `pnpm run typecheck` — full typecheck across all packages
