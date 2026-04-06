@@ -30,3 +30,15 @@ id = "6_74XYPJCDFJjadDDFbwN"
 uri = "file://SniperSheet_Master_Edition.pdf"
 type = "pdf"
 title = "SniperSheet Master Edition — RTL Arabic Fixed (17 صفحة)"
+
+[[outputs]]
+id = "UXwRoTOFuQpfWZaK5y2bF"
+uri = "file://SniperSheet_Arabic_Official.pdf"
+type = "pdf"
+title = "سنابيرشيت — الدليل العربي الرسمي (10 صفحات عربية خالصة)"
+
+[[outputs]]
+id = "_OC2JQyO_Fab2x4mgl6QI"
+uri = "file://SniperSheet_English_Official.pdf"
+type = "pdf"
+title = "SniperSheet — Official English Guide (9 Pages)"
