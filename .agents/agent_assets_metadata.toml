@@ -42,3 +42,9 @@ id = "_OC2JQyO_Fab2x4mgl6QI"
 uri = "file://SniperSheet_English_Official.pdf"
 type = "pdf"
 title = "SniperSheet — Official English Guide (9 Pages)"
+
+[[outputs]]
+id = "1ttDAuds1lXzSbQsmX11c"
+uri = "file://SniperSheet_Official_Guide_EN.pdf"
+type = "pdf"
+title = "SniperSheet Official Guide EN — 17 Pages (Clean, No Blank Pages)"
