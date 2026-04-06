@@ -12,3 +12,15 @@ id = "nm0h7WLtAlOJ-pHKZoHAc"
 uri = "file://SniperSheet-Guide.pdf"
 type = "pdf"
 title = "SniperSheet Guide — Professional Brochure (7 Pages)"
+
+[[outputs]]
+id = "5ZNjBBrFxzyx7n9hwUU7z"
+uri = "file://SniperSheet-Guide-EN.pdf"
+type = "pdf"
+title = "SniperSheet Guide — English Version (7 Pages)"
+
+[[outputs]]
+id = "PMfCwIZGOGcsAlW06cfVZ"
+uri = "file://SniperSheet-Guide-AR.pdf"
+type = "pdf"
+title = "دليل SniperSheet — النسخة العربية (7 صفحات)"
