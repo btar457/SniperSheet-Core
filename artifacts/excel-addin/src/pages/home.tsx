@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Terminal, Grid3X3, Sparkles, Wrench } from "lucide-react";
+import { Terminal, Grid3X3, Sparkles, Wrench, HelpCircle } from "lucide-react";
 import { CommandsTab } from "@/components/commands-tab";
 import { CellDimensionsTab } from "@/components/cell-dimensions-tab";
 import { SmartHubTab } from "@/components/smart-hub-tab";
@@ -56,6 +56,19 @@ export default function Home() {
         {activeTab === "dimensions" && <CellDimensionsTab />}
         {activeTab === "tools"      && <ToolsTab />}
       </main>
+
+      {/* Footer Help Bar */}
+      <footer className="flex-none border-t border-border bg-muted/20 px-3 py-1.5 flex items-center justify-between">
+        <span className="text-[10px] text-muted-foreground truncate">Mustafa Alsahlany</span>
+        <button
+          onClick={() => window.open("/api/help", "_blank")}
+          className="flex items-center gap-1 text-[11px] font-medium text-primary hover:text-primary/80 transition-colors"
+          title="Open SniperSheet Official Guide"
+        >
+          <HelpCircle className="w-3.5 h-3.5" />
+          <span>Help</span>
+        </button>
+      </footer>
     </div>
   );
 }
