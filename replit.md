@@ -37,7 +37,7 @@ pnpm workspace monorepo using TypeScript. Each package manages its own dependenc
 
 ## Architecture Notes
 
-- **Smart Hub Engine**: 100% free rule-based formula engine (`artifacts/api-server/src/lib/formula-engine.ts`). Zero API calls, zero cost. Covers 35+ patterns in Arabic & English: overtime, pass/fail, grade scales, SUMIF, AVERAGEIF, COUNTIF, VLOOKUP/XLOOKUP, INDEX-MATCH, MAX/MIN, RANK, percentages, taxes, salary, dates, PMT, text functions, rounding, IF conditions, arithmetic. Responds in <10ms.
+- **Smart Hub Engine**: Uses Groq AI (server-side proxy — client never contacts Groq directly, works from any region including Iraq). Primary models: `llama-3.3-70b-versatile`, `llama3-70b-8192`, `llama3-8b-8192` in order. Falls back to local rule-based engine (`src/lib/formula-engine.ts`) if all Groq models are rate-limited. GROQ_API_KEY stored as Replit secret.
 - **Word Radar**: Client-side only (`src/lib/word-radar.ts`). Uses a Levenshtein distance dictionary scan against known Excel functions + Arabic/English keywords. Runs reactively on every keystroke via `useMemo`.
 - **Empty Field Radar**: Client-side grid analysis. Parses CSV/tab-separated text into a 2D array, highlights empty cells with a visual grid preview and position list (e.g., "A2, C4").
 - **Smart Print-Fit**: Client-side calculation. A4/A3 paper dimensions in mm → Excel column width units, scaling percentage, recommended font size.
