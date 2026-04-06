@@ -1,8 +1,9 @@
-import { useState, useRef } from "react";
+import { useState, useRef, useMemo } from "react";
 import { useQueryClient } from "@tanstack/react-query";
 import {
   Sparkles, Send, ChevronDown, ChevronUp, Clock, AlertCircle,
-  Lightbulb, CheckCircle2, Palette, BarChart3, Search, Calculator
+  Lightbulb, CheckCircle2, Palette, BarChart3, Search, Calculator,
+  ShieldAlert,
 } from "lucide-react";
 import { format } from "date-fns";
 
@@ -12,6 +13,8 @@ import {
   getGetSmartHistoryQueryKey,
 } from "@workspace/api-client-react";
 
+import { scanWithWordRadar } from "@/lib/word-radar";
+
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Input } from "@/components/ui/input";
@@ -19,7 +22,6 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Alert, AlertDescription } from "@/components/ui/alert";
-import { Separator } from "@/components/ui/separator";
 
 const FORMULA_TYPE_CONFIG: Record<string, { label: string; arLabel: string; icon: React.ReactNode; color: string }> = {
   arithmetic:  { label: "Arithmetic",  arLabel: "حسابي",     icon: <Calculator className="w-3 h-3" />,  color: "bg-blue-100 text-blue-700 dark:bg-blue-900 dark:text-blue-300" },
@@ -87,6 +89,8 @@ export function SmartHubTab() {
     query: { queryKey: getGetSmartHistoryQueryKey() },
   });
 
+  const radarIssues = useMemo(() => scanWithWordRadar(description), [description]);
+
   function handleSubmit() {
     if (!description.trim()) return;
 
@@ -153,10 +157,53 @@ export function SmartHubTab() {
                     if (e.key === "Enter" && (e.ctrlKey || e.metaKey)) handleSubmit();
                   }}
                   placeholder="مثال: إذا كانت الساعات أكثر من 40، احسب وقت إضافي بمعدل 1.5 مرة&#10;Example: If grade > 90 AND attendance > 95% then 'Excellent'"
-                  className="resize-none min-h-[90px] text-sm leading-relaxed"
+                  className={`resize-none min-h-[90px] text-sm leading-relaxed transition-colors ${radarIssues.some(i => i.severity === "warning") ? "border-amber-400 dark:border-amber-600 focus-visible:ring-amber-400" : ""}`}
                   dir="auto"
                   data-testid="input-smart-description"
                 />
+
+                {/* Word Radar Panel */}
+                {description.trim() && radarIssues.length > 0 && (
+                  <div className="rounded-md border border-amber-200 dark:border-amber-800 bg-amber-50 dark:bg-amber-950/40 p-2 space-y-1.5 animate-in fade-in" data-testid="word-radar-panel">
+                    <div className="flex items-center gap-1.5 text-[10px] font-semibold text-amber-700 dark:text-amber-400">
+                      <ShieldAlert className="w-3 h-3" />
+                      رادار الكلمات / Word Radar ({radarIssues.length} {radarIssues.length === 1 ? "تنبيه" : "تنبيهات"})
+                    </div>
+                    {radarIssues.slice(0, 4).map((issue, i) => (
+                      <div key={i} className="text-[10px] space-y-0.5">
+                        <div className="flex items-center gap-1.5 flex-wrap">
+                          <code className={`px-1 py-0.5 rounded text-[10px] font-mono ${issue.severity === "warning" ? "bg-amber-200 dark:bg-amber-800 text-amber-800 dark:text-amber-200" : "bg-blue-100 dark:bg-blue-900 text-blue-700 dark:text-blue-300"}`}>
+                            {issue.token}
+                          </code>
+                          <span className="text-muted-foreground">{issue.reason}</span>
+                        </div>
+                        {issue.suggestions.length > 0 && (
+                          <div className="flex flex-wrap gap-1 mt-0.5">
+                            {issue.suggestions.map((s) => (
+                              <button
+                                key={s}
+                                onClick={() => setDescription(description.replace(new RegExp(`\\b${issue.token}\\b`, "gi"), s))}
+                                className="px-1.5 py-0.5 rounded bg-background border border-border text-[9px] font-mono hover:bg-primary hover:text-primary-foreground hover:border-primary transition-colors"
+                              >
+                                {s}
+                              </button>
+                            ))}
+                          </div>
+                        )}
+                      </div>
+                    ))}
+                    {radarIssues.length > 4 && (
+                      <div className="text-[9px] text-muted-foreground">+{radarIssues.length - 4} تنبيه إضافي / more issues</div>
+                    )}
+                  </div>
+                )}
+
+                {description.trim() && radarIssues.length === 0 && (
+                  <div className="flex items-center gap-1.5 text-[10px] text-green-600 dark:text-green-400 animate-in fade-in">
+                    <CheckCircle2 className="w-3 h-3" />
+                    <span>الوصف واضح / Description looks clear</span>
+                  </div>
+                )}
               </div>
 
               <div className="grid grid-cols-2 gap-2">

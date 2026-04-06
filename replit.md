@@ -38,6 +38,10 @@ pnpm workspace monorepo using TypeScript. Each package manages its own dependenc
 ## Architecture Notes
 
 - **Smart Hub AI**: Uses `@workspace/integrations-openai-ai-server` → single-shot JSON structured response from `gpt-5-mini`. System prompt forces bilingual reasoning + styleHints for formatting commands.
+- **Word Radar**: Client-side only (`src/lib/word-radar.ts`). Uses a Levenshtein distance dictionary scan against known Excel functions + Arabic/English keywords. Runs reactively on every keystroke via `useMemo`.
+- **Empty Field Radar**: Client-side grid analysis. Parses CSV/tab-separated text into a 2D array, highlights empty cells with a visual grid preview and position list (e.g., "A2, C4").
+- **Smart Print-Fit**: Client-side calculation. A4/A3 paper dimensions in mm → Excel column width units, scaling percentage, recommended font size.
+- **Professional Report View**: Client-side HTML table renderer with a `window.open()` print dialog. Passes pre-styled HTML including the full report content.
 - **Arabic command support**: `ARABIC_COMMAND_MAP` in `commands.ts` maps ~40 Arabic variants to normalized English commands.
 - **Arabic cell dimensions**: `cells.ts` uses per-character width detection (Arabic chars use `0.9x` factor vs `0.6x` for Latin).
 - **Command history**: In-memory only (not persisted), max 20 entries.

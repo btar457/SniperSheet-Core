@@ -1,49 +1,50 @@
 import { useState } from "react";
-import { Terminal, Grid3X3, Sparkles } from "lucide-react";
+import { Terminal, Grid3X3, Sparkles, Wrench } from "lucide-react";
 import { CommandsTab } from "@/components/commands-tab";
 import { CellDimensionsTab } from "@/components/cell-dimensions-tab";
 import { SmartHubTab } from "@/components/smart-hub-tab";
+import { ToolsTab } from "@/components/tools-tab";
 
-type Tab = "smart" | "commands" | "dimensions";
+type Tab = "smart" | "commands" | "dimensions" | "tools";
 
 export default function Home() {
   const [activeTab, setActiveTab] = useState<Tab>("smart");
 
-  const tabs: { id: Tab; label: string; arLabel: string; icon: React.ReactNode }[] = [
-    { id: "smart",      label: "Smart Hub",  arLabel: "المحرك الذكي", icon: <Sparkles className="w-3.5 h-3.5" /> },
-    { id: "commands",   label: "Commands",   arLabel: "أوامر",        icon: <Terminal className="w-3.5 h-3.5" /> },
-    { id: "dimensions", label: "Dimensions", arLabel: "أبعاد",        icon: <Grid3X3 className="w-3.5 h-3.5" /> },
+  const tabs: { id: Tab; arLabel: string; enLabel: string; icon: React.ReactNode }[] = [
+    { id: "smart",      arLabel: "الذكي",  enLabel: "Smart",   icon: <Sparkles className="w-3.5 h-3.5" /> },
+    { id: "commands",   arLabel: "أوامر",  enLabel: "Cmds",    icon: <Terminal className="w-3.5 h-3.5" /> },
+    { id: "dimensions", arLabel: "أبعاد",  enLabel: "Dims",    icon: <Grid3X3 className="w-3.5 h-3.5" /> },
+    { id: "tools",      arLabel: "أدوات",  enLabel: "Tools",   icon: <Wrench className="w-3.5 h-3.5" /> },
   ];
 
   return (
     <div className="flex flex-col w-full h-screen max-w-[400px] bg-background border-r border-border overflow-hidden m-0 shadow-xl">
       {/* Header */}
-      <header className="flex-none bg-card border-b border-border px-3 py-2.5 flex items-center gap-2">
-        <div className="w-7 h-7 bg-primary rounded-md flex items-center justify-center text-primary-foreground shadow-sm">
+      <header className="flex-none bg-card border-b border-border px-3 py-2 flex items-center gap-2">
+        <div className="w-7 h-7 bg-primary rounded-md flex items-center justify-center text-primary-foreground shadow-sm flex-none">
           <Sparkles className="w-4 h-4" />
         </div>
-        <div className="flex-1">
+        <div className="flex-1 min-w-0">
           <h1 className="text-sm font-bold text-card-foreground leading-tight tracking-tight">SniperSheet</h1>
-          <p className="text-[10px] text-muted-foreground leading-tight">محرك المعادلات الذكي / Smart Logic Engine</p>
+          <p className="text-[10px] text-muted-foreground leading-tight truncate">محرك المعادلات الذكي / Smart Logic Engine</p>
         </div>
       </header>
 
-      {/* Tab Navigation */}
-      <div className="flex-none flex p-1.5 gap-1 bg-muted/30 border-b border-border">
+      {/* Tab Navigation — 4 compact tabs */}
+      <div className="flex-none flex border-b border-border bg-muted/20">
         {tabs.map((tab) => (
           <button
             key={tab.id}
             onClick={() => setActiveTab(tab.id)}
-            className={`flex-1 flex items-center justify-center gap-1 py-1.5 px-2 rounded-md text-[11px] font-medium transition-all ${
+            className={`flex-1 flex flex-col items-center justify-center gap-0.5 py-1.5 text-[10px] font-medium transition-all border-b-2 ${
               activeTab === tab.id
-                ? "bg-background text-foreground shadow-sm border border-border/50"
-                : "text-muted-foreground hover:bg-muted hover:text-foreground"
+                ? "border-primary text-primary bg-background"
+                : "border-transparent text-muted-foreground hover:text-foreground hover:bg-muted/40"
             }`}
             data-testid={`nav-${tab.id}`}
           >
             {tab.icon}
-            <span className="hidden sm:inline">{tab.label}</span>
-            <span className="sm:hidden">{tab.arLabel}</span>
+            <span>{tab.arLabel}</span>
           </button>
         ))}
       </div>
@@ -53,6 +54,7 @@ export default function Home() {
         {activeTab === "smart"      && <SmartHubTab />}
         {activeTab === "commands"   && <CommandsTab />}
         {activeTab === "dimensions" && <CellDimensionsTab />}
+        {activeTab === "tools"      && <ToolsTab />}
       </main>
     </div>
   );
