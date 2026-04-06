@@ -23,7 +23,10 @@ let nextId = 1;
 const SUPPORTED_COMMANDS = ["sum", "multiply", "average", "min", "max", "subtract", "divide"] as const;
 type SupportedCommand = (typeof SUPPORTED_COMMANDS)[number];
 
-function interpretCommand(command: string, values: number[]): { result: number; formula: string; description: string } {
+function interpretCommand(
+  command: string,
+  values: number[]
+): { result: number; formula: string; description: string } {
   const cmd = command.toLowerCase().trim() as SupportedCommand;
 
   if (values.length === 0) {
@@ -86,11 +89,10 @@ function interpretCommand(command: string, values: number[]): { result: number; 
       if (values.length < 2) {
         throw new Error("Divide requires at least 2 values");
       }
-      const divisors = values.slice(1);
-      if (divisors.some((v) => v === 0)) {
+      if (values.slice(1).some((v) => v === 0)) {
         throw new Error("Division by zero is not allowed");
       }
-      const result = divisors.reduce((acc, v) => acc / v, values[0]);
+      const result = values.slice(1).reduce((acc, v) => acc / v, values[0]);
       return {
         result,
         formula: `=${values.join(" / ")}`,
@@ -99,13 +101,13 @@ function interpretCommand(command: string, values: number[]): { result: number; 
     }
     default: {
       throw new Error(
-        `Unknown command "${command}". Supported commands: ${SUPPORTED_COMMANDS.join(", ")}`
+        `Unknown command "${command}". Supported: ${SUPPORTED_COMMANDS.join(", ")}`
       );
     }
   }
 }
 
-router.post("/commands/execute", async (req, res): Promise<void> => {
+router.post("/execute", async (req, res): Promise<void> => {
   const parsed = ExecuteCommandBody.safeParse(req.body);
   if (!parsed.success) {
     res.status(400).json({ error: parsed.error.message });
@@ -124,17 +126,17 @@ router.post("/commands/execute", async (req, res): Promise<void> => {
     return;
   }
 
+  const formula =
+    cellRange
+      ? outcome.formula.replace(/\(.*\)/, `(${cellRange})`)
+      : outcome.formula;
+
   const entry: HistoryEntry = {
     id: nextId++,
     command,
     values,
     result: outcome.result,
-    formula: cellRange
-      ? outcome.formula.replace(
-          /\(.*\)/,
-          `(${cellRange})`
-        )
-      : outcome.formula,
+    formula,
     cellRange: cellRange ?? null,
     executedAt: new Date().toISOString(),
   };
@@ -150,13 +152,13 @@ router.post("/commands/execute", async (req, res): Promise<void> => {
     ExecuteCommandResponse.parse({
       command,
       result: outcome.result,
-      formula: entry.formula,
+      formula,
       description: outcome.description,
     })
   );
 });
 
-router.get("/commands/history", async (_req, res): Promise<void> => {
+router.get("/history", async (_req, res): Promise<void> => {
   const history = [...commandHistory].reverse();
   res.json(GetCommandHistoryResponse.parse(history));
 });

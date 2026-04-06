@@ -6,7 +6,7 @@ import cellsRouter from "./cells";
 const router: IRouter = Router();
 
 router.use(healthRouter);
-router.use(commandsRouter);
+router.use("/commands", commandsRouter);
 router.use(cellsRouter);
 
 export default router;
