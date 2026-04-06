@@ -12,38 +12,31 @@
     ║   Provider  : Mustafa Alsahlany                              ║
     ║   Add-in ID : 676b34f8-2a49-4066-8bbe-d3aabc46719d          ║
     ║   Version   : 1.0.0.0                                        ║
-    ║   Locale    : ar-SA (primary)  en-US (fallback)              ║
-    ║   Permission: ReadWriteDocument                              ║
+    ║   Domain    : node-runner-mustafaalshlany.replit.app         ║
     ╚══════════════════════════════════════════════════════════════╝
   -->
 
   <Id>676b34f8-2a49-4066-8bbe-d3aabc46719d</Id>
   <Version>1.0.0.0</Version>
   <ProviderName>Mustafa Alsahlany</ProviderName>
-
-  <!-- Default locale: Arabic (Saudi Arabia) for full RTL support -->
   <DefaultLocale>ar-SA</DefaultLocale>
 
-  <!-- Display name with Arabic primary + English fallback -->
   <DisplayName DefaultValue="SniperSheet: AI Formula Engine">
     <bt:Override Locale="ar-SA" Value="سنابيرشيت: محرك المعادلات الذكي" />
     <bt:Override Locale="en-US" Value="SniperSheet: AI Formula Engine" />
   </DisplayName>
 
-  <!-- Description with Arabic primary + English fallback -->
   <Description DefaultValue="Advanced AI-powered Excel add-in for engineering and financial formulas. Developed by Mustafa Alsahlany.">
-    <bt:Override Locale="ar-SA" Value="إضافة إكسل الاحترافية المدعومة بالذكاء الاصطناعي لتوليد المعادلات الهندسية والمالية من اللغة الطبيعية. تطوير مصطفى السهلاني." />
+    <bt:Override Locale="ar-SA" Value="إضافة إكسل الاحترافية المدعومة بالذكاء الاصطناعي لتوليد المعادلات الهندسية والمالية. تطوير مصطفى السهلاني." />
     <bt:Override Locale="en-US" Value="Advanced AI-powered Excel add-in for engineering and financial formulas. Developed by Mustafa Alsahlany." />
   </Description>
 
-  <!-- Icons: 32px standard · 80px high-resolution -->
-  <IconUrl DefaultValue="https://8e832e48-8f9e-4168-9828-29c19ce7accc-00-12f81e1kjeof1.picard.replit.dev/api/addin/icon-32.png" />
-  <HighResolutionIconUrl DefaultValue="https://8e832e48-8f9e-4168-9828-29c19ce7accc-00-12f81e1kjeof1.picard.replit.dev/api/addin/icon-80.png" />
-  <SupportUrl DefaultValue="https://8e832e48-8f9e-4168-9828-29c19ce7accc-00-12f81e1kjeof1.picard.replit.dev/excel-addin/" />
+  <IconUrl DefaultValue="https://node-runner-mustafaalshlany.replit.app/api/addin/icon-32.png" />
+  <HighResolutionIconUrl DefaultValue="https://node-runner-mustafaalshlany.replit.app/api/addin/icon-80.png" />
+  <SupportUrl DefaultValue="https://node-runner-mustafaalshlany.replit.app/excel-addin/" />
 
-  <!-- Trusted domain -->
   <AppDomains>
-    <AppDomain>https://8e832e48-8f9e-4168-9828-29c19ce7accc-00-12f81e1kjeof1.picard.replit.dev</AppDomain>
+    <AppDomain>https://node-runner-mustafaalshlany.replit.app</AppDomain>
   </AppDomains>
 
   <Hosts>
@@ -51,47 +44,33 @@
   </Hosts>
 
   <DefaultSettings>
-    <SourceLocation DefaultValue="https://8e832e48-8f9e-4168-9828-29c19ce7accc-00-12f81e1kjeof1.picard.replit.dev/excel-addin/" />
+    <SourceLocation DefaultValue="https://node-runner-mustafaalshlany.replit.app/excel-addin/" />
   </DefaultSettings>
 
-  <!-- ReadWriteDocument: AI can write formulas directly into cells -->
   <Permissions>ReadWriteDocument</Permissions>
 
-  <!-- ════════════════════════════════════════════════════════════
-       VERSION OVERRIDES — Custom Ribbon tab & button (Excel 2016+)
-       Enables the "SniperSheet" tab in the Excel Ribbon with a
-       single "Open Sniper Hub" button that opens the task pane.
-  ════════════════════════════════════════════════════════════ -->
   <VersionOverrides xmlns="http://schemas.microsoft.com/office/taskpaneappversionoverrides" xsi:type="VersionOverridesV1_0">
-
     <Hosts>
       <Host xsi:type="Workbook">
         <DesktopFormFactor>
-
           <FunctionFile resid="Taskpane.Url" />
-
           <ExtensionPoint xsi:type="PrimaryCommandSurface">
             <CustomTab id="SniperSheet.Tab">
               <Label resid="Tab.Label" />
-
               <Group id="SniperSheet.Group">
                 <Label resid="Group.Label" />
-
                 <Control xsi:type="Button" id="SniperSheet.OpenButton">
                   <Label resid="Button.Label" />
                   <Supertip>
                     <Title resid="Button.Title" />
                     <Description resid="Button.Tooltip" />
                   </Supertip>
-
-                  <!-- Icons: 16px · 32px · 64px · 80px -->
                   <Icon>
                     <bt:Image size="16" resid="Icon.16" />
                     <bt:Image size="32" resid="Icon.32" />
                     <bt:Image size="64" resid="Icon.64" />
                     <bt:Image size="80" resid="Icon.80" />
                   </Icon>
-
                   <Action xsi:type="ShowTaskpane">
                     <TaskpaneId>SniperSheetPane</TaskpaneId>
                     <SourceLocation resid="Taskpane.Url" />
@@ -99,68 +78,52 @@
                     <SupportedDeviceFormFactor>Desktop</SupportedDeviceFormFactor>
                   </Action>
                 </Control>
-
               </Group>
             </CustomTab>
           </ExtensionPoint>
-
         </DesktopFormFactor>
       </Host>
     </Hosts>
 
     <Resources>
-
-      <!-- Icon assets: 16 · 32 · 64 · 80 px (all served from /api/addin/) -->
       <bt:Images>
-        <bt:Image id="Icon.16" DefaultValue="https://8e832e48-8f9e-4168-9828-29c19ce7accc-00-12f81e1kjeof1.picard.replit.dev/api/addin/icon-16.png" />
-        <bt:Image id="Icon.32" DefaultValue="https://8e832e48-8f9e-4168-9828-29c19ce7accc-00-12f81e1kjeof1.picard.replit.dev/api/addin/icon-32.png" />
-        <bt:Image id="Icon.64" DefaultValue="https://8e832e48-8f9e-4168-9828-29c19ce7accc-00-12f81e1kjeof1.picard.replit.dev/api/addin/icon-64.png" />
-        <bt:Image id="Icon.80" DefaultValue="https://8e832e48-8f9e-4168-9828-29c19ce7accc-00-12f81e1kjeof1.picard.replit.dev/api/addin/icon-80.png" />
+        <bt:Image id="Icon.16" DefaultValue="https://node-runner-mustafaalshlany.replit.app/api/addin/icon-16.png" />
+        <bt:Image id="Icon.32" DefaultValue="https://node-runner-mustafaalshlany.replit.app/api/addin/icon-32.png" />
+        <bt:Image id="Icon.64" DefaultValue="https://node-runner-mustafaalshlany.replit.app/api/addin/icon-64.png" />
+        <bt:Image id="Icon.80" DefaultValue="https://node-runner-mustafaalshlany.replit.app/api/addin/icon-80.png" />
       </bt:Images>
-
-      <!-- Task pane source URL -->
       <bt:Urls>
-        <bt:Url id="Taskpane.Url" DefaultValue="https://8e832e48-8f9e-4168-9828-29c19ce7accc-00-12f81e1kjeof1.picard.replit.dev/excel-addin/" />
+        <bt:Url id="Taskpane.Url" DefaultValue="https://node-runner-mustafaalshlany.replit.app/excel-addin/" />
       </bt:Urls>
-
-      <!-- Short UI strings (Ribbon labels) — Arabic primary, English fallback -->
       <bt:ShortStrings>
         <bt:String id="Tab.Label" DefaultValue="SniperSheet">
           <bt:Override Locale="ar-SA" Value="سنابيرشيت" />
           <bt:Override Locale="en-US" Value="SniperSheet" />
         </bt:String>
-
         <bt:String id="Group.Label" DefaultValue="أدوات ذكية">
           <bt:Override Locale="ar-SA" Value="أدوات ذكية" />
           <bt:Override Locale="en-US" Value="Smart Tools" />
         </bt:String>
-
         <bt:String id="Button.Label" DefaultValue="فتح المحرك الذكي">
           <bt:Override Locale="ar-SA" Value="فتح المحرك الذكي" />
           <bt:Override Locale="en-US" Value="Open Sniper Hub" />
         </bt:String>
-
         <bt:String id="Button.Title" DefaultValue="SniperSheet: AI Formula Engine">
           <bt:Override Locale="ar-SA" Value="سنابيرشيت: محرك المعادلات الذكي" />
           <bt:Override Locale="en-US" Value="SniperSheet: AI Formula Engine" />
         </bt:String>
-
         <bt:String id="Taskpane.Title" DefaultValue="SniperSheet">
           <bt:Override Locale="ar-SA" Value="سنابيرشيت" />
           <bt:Override Locale="en-US" Value="SniperSheet" />
         </bt:String>
       </bt:ShortStrings>
-
-      <!-- Tooltip (long string) — Arabic primary, English fallback -->
       <bt:LongStrings>
-        <bt:String id="Button.Tooltip" DefaultValue="افتح محرك سنابيرشيت الذكي لتوليد معادلات إكسل من اللغة الطبيعية بالعربية أو الإنجليزية.">
+        <bt:String id="Button.Tooltip" DefaultValue="افتح محرك سنابيرشيت الذكي لتوليد معادلات إكسل من اللغة الطبيعية.">
           <bt:Override Locale="ar-SA" Value="افتح محرك سنابيرشيت الذكي لتوليد معادلات إكسل من اللغة الطبيعية بالعربية أو الإنجليزية." />
           <bt:Override Locale="en-US" Value="Open SniperSheet AI engine to generate Excel formulas from English or Arabic natural language descriptions." />
         </bt:String>
       </bt:LongStrings>
-
     </Resources>
-
   </VersionOverrides>
 
 </OfficeApp>
