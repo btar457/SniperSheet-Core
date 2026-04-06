@@ -20,18 +20,122 @@ type HistoryEntry = {
 const commandHistory: HistoryEntry[] = [];
 let nextId = 1;
 
-const SUPPORTED_COMMANDS = ["sum", "multiply", "average", "min", "max", "subtract", "divide"] as const;
-type SupportedCommand = (typeof SUPPORTED_COMMANDS)[number];
+type NormalizedCommand =
+  | "sum"
+  | "multiply"
+  | "average"
+  | "min"
+  | "max"
+  | "subtract"
+  | "divide";
+
+const ARABIC_COMMAND_MAP: Record<string, NormalizedCommand> = {
+  // --- Sum / جمع ---
+  sum: "sum",
+  جمع: "sum",
+  اجمع: "sum",
+  إجمع: "sum",
+  مجموع: "sum",
+  "الجمع": "sum",
+
+  // --- Multiply / ضرب ---
+  multiply: "multiply",
+  product: "multiply",
+  ضرب: "multiply",
+  اضرب: "multiply",
+  إضرب: "multiply",
+  "حاصل الضرب": "multiply",
+  حاصل: "multiply",
+
+  // --- Average / متوسط ---
+  average: "average",
+  avg: "average",
+  mean: "average",
+  متوسط: "average",
+  وسط: "average",
+  المتوسط: "average",
+  "الوسط الحسابي": "average",
+
+  // --- Min / أقل ---
+  min: "min",
+  minimum: "min",
+  أقل: "min",
+  اقل: "min",
+  أصغر: "min",
+  اصغر: "min",
+  الأدنى: "min",
+  الادنى: "min",
+  "الحد الأدنى": "min",
+
+  // --- Max / أكبر ---
+  max: "max",
+  maximum: "max",
+  أكبر: "max",
+  اكبر: "max",
+  أعلى: "max",
+  اعلى: "max",
+  الأقصى: "max",
+  الاقصى: "max",
+  "الحد الأقصى": "max",
+
+  // --- Subtract / طرح ---
+  subtract: "subtract",
+  minus: "subtract",
+  طرح: "subtract",
+  اطرح: "subtract",
+  إطرح: "subtract",
+  ناقص: "subtract",
+  "الطرح": "subtract",
+  "حاصل الطرح": "subtract",
+
+  // --- Divide / قسمة ---
+  divide: "divide",
+  division: "divide",
+  قسمة: "divide",
+  اقسم: "divide",
+  إقسم: "divide",
+  مقسوم: "divide",
+  "القسمة": "divide",
+  "حاصل القسمة": "divide",
+};
+
+const COMMAND_DESCRIPTIONS: Record<NormalizedCommand, { en: string; ar: string; formula: string }> = {
+  sum:      { en: "Sum",      ar: "جمع",         formula: "SUM"     },
+  multiply: { en: "Multiply", ar: "ضرب",         formula: "PRODUCT" },
+  average:  { en: "Average",  ar: "متوسط",       formula: "AVERAGE" },
+  min:      { en: "Min",      ar: "أقل قيمة",    formula: "MIN"     },
+  max:      { en: "Max",      ar: "أكبر قيمة",   formula: "MAX"     },
+  subtract: { en: "Subtract", ar: "طرح",         formula: "MINUS"   },
+  divide:   { en: "Divide",   ar: "قسمة",        formula: "DIVIDE"  },
+};
+
+function normalizeCommand(raw: string): NormalizedCommand | null {
+  const key = raw.toLowerCase().trim();
+  return ARABIC_COMMAND_MAP[key] ?? ARABIC_COMMAND_MAP[raw.trim()] ?? null;
+}
 
 function interpretCommand(
-  command: string,
+  rawCommand: string,
   values: number[]
-): { result: number; formula: string; description: string } {
-  const cmd = command.toLowerCase().trim() as SupportedCommand;
-
+): { result: number; formula: string; description: string; normalizedCommand: string } {
   if (values.length === 0) {
-    throw new Error("At least one value is required");
+    throw new Error("يجب توفير قيمة واحدة على الأقل / At least one value is required");
   }
+
+  const cmd = normalizeCommand(rawCommand);
+
+  if (!cmd) {
+    const supported = Object.keys(ARABIC_COMMAND_MAP)
+      .filter((k) => /[a-z]/i.test(k[0]))
+      .slice(0, 7)
+      .join(", ");
+    const arSupported = "جمع، ضرب، متوسط، أقل، أكبر، طرح، قسمة";
+    throw new Error(
+      `الأمر "${rawCommand}" غير مدعوم. الأوامر المتاحة: ${arSupported} / Supported: ${supported}`
+    );
+  }
+
+  const meta = COMMAND_DESCRIPTIONS[cmd];
 
   switch (cmd) {
     case "sum": {
@@ -39,7 +143,8 @@ function interpretCommand(
       return {
         result,
         formula: `=SUM(${values.join(", ")})`,
-        description: `Sum of ${values.length} value${values.length === 1 ? "" : "s"}`,
+        description: `${meta.ar} (${meta.en}) — ${values.length} قيمة`,
+        normalizedCommand: cmd,
       };
     }
     case "multiply": {
@@ -47,7 +152,8 @@ function interpretCommand(
       return {
         result,
         formula: `=PRODUCT(${values.join(", ")})`,
-        description: `Product of ${values.length} value${values.length === 1 ? "" : "s"}`,
+        description: `${meta.ar} (${meta.en}) — ${values.length} قيمة`,
+        normalizedCommand: cmd,
       };
     }
     case "average": {
@@ -55,7 +161,8 @@ function interpretCommand(
       return {
         result,
         formula: `=AVERAGE(${values.join(", ")})`,
-        description: `Average of ${values.length} value${values.length === 1 ? "" : "s"}`,
+        description: `${meta.ar} (${meta.en}) — ${values.length} قيمة`,
+        normalizedCommand: cmd,
       };
     }
     case "min": {
@@ -63,7 +170,8 @@ function interpretCommand(
       return {
         result,
         formula: `=MIN(${values.join(", ")})`,
-        description: `Minimum of ${values.length} value${values.length === 1 ? "" : "s"}`,
+        description: `${meta.ar} (${meta.en}) — ${values.length} قيمة`,
+        normalizedCommand: cmd,
       };
     }
     case "max": {
@@ -71,38 +179,36 @@ function interpretCommand(
       return {
         result,
         formula: `=MAX(${values.join(", ")})`,
-        description: `Maximum of ${values.length} value${values.length === 1 ? "" : "s"}`,
+        description: `${meta.ar} (${meta.en}) — ${values.length} قيمة`,
+        normalizedCommand: cmd,
       };
     }
     case "subtract": {
       if (values.length < 2) {
-        throw new Error("Subtract requires at least 2 values");
+        throw new Error("الطرح يتطلب قيمتين على الأقل / Subtract requires at least 2 values");
       }
       const result = values.slice(1).reduce((acc, v) => acc - v, values[0]);
       return {
         result,
         formula: `=${values.join(" - ")}`,
-        description: `${values[0]} minus subsequent values`,
+        description: `${meta.ar} (${meta.en}) — ${values[0]} ناقص الباقي`,
+        normalizedCommand: cmd,
       };
     }
     case "divide": {
       if (values.length < 2) {
-        throw new Error("Divide requires at least 2 values");
+        throw new Error("القسمة تتطلب قيمتين على الأقل / Divide requires at least 2 values");
       }
       if (values.slice(1).some((v) => v === 0)) {
-        throw new Error("Division by zero is not allowed");
+        throw new Error("لا يمكن القسمة على صفر / Division by zero is not allowed");
       }
       const result = values.slice(1).reduce((acc, v) => acc / v, values[0]);
       return {
         result,
         formula: `=${values.join(" / ")}`,
-        description: `${values[0]} divided by subsequent values`,
+        description: `${meta.ar} (${meta.en}) — ${values[0]} مقسوماً على الباقي`,
+        normalizedCommand: cmd,
       };
-    }
-    default: {
-      throw new Error(
-        `Unknown command "${command}". Supported: ${SUPPORTED_COMMANDS.join(", ")}`
-      );
     }
   }
 }
@@ -116,11 +222,11 @@ router.post("/execute", async (req, res): Promise<void> => {
 
   const { command, values, cellRange } = parsed.data;
 
-  let outcome: { result: number; formula: string; description: string };
+  let outcome: ReturnType<typeof interpretCommand>;
   try {
     outcome = interpretCommand(command, values);
   } catch (err) {
-    const message = err instanceof Error ? err.message : "Command execution failed";
+    const message = err instanceof Error ? err.message : "فشل تنفيذ الأمر / Command execution failed";
     req.log.warn({ command, values }, message);
     res.status(400).json({ error: message });
     return;
@@ -146,7 +252,7 @@ router.post("/execute", async (req, res): Promise<void> => {
   }
   commandHistory.push(entry);
 
-  req.log.info({ command, result: outcome.result }, "Command executed");
+  req.log.info({ command, normalizedCommand: outcome.normalizedCommand, result: outcome.result }, "Command executed");
 
   res.json(
     ExecuteCommandResponse.parse({
