@@ -1,0 +1,8 @@
+uploads = []
+generated = []
+
+[[outputs]]
+id = "8gGXTrDsAoSnx4hJHAAwq"
+uri = "file://manifest.xml"
+type = "unspecified"
+title = "SniperSheet — manifest.xml (جاهز للتثبيت)"
