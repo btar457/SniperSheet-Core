@@ -105,6 +105,68 @@ export interface BatchCellDimensions {
   recommendedHeight: number;
 }
 
+export interface SmartAnalyzeBody {
+  /** Natural language description of the desired Excel logic (Arabic or English) */
+  description: string;
+  /** Optional numeric values to use in calculations */
+  values?: number[];
+  /**
+   * Optional cell reference context (e.g., "A1", "B2:B10")
+   * @nullable
+   */
+  cellRef?: string | null;
+}
+
+export interface StyleHint {
+  /** What the style applies to (e.g., "cell", "text", "background") */
+  target: string;
+  /**
+   * Color value (e.g., "red", "#FF0000", "green")
+   * @nullable
+   */
+  color?: string | null;
+  /** @nullable */
+  bold?: boolean | null;
+  /** @nullable */
+  italic?: boolean | null;
+  /**
+   * The condition that triggers this style (e.g., "value < 50")
+   * @nullable
+   */
+  condition?: string | null;
+}
+
+export interface SmartAnalyzeResult {
+  /** The generated Excel formula */
+  formula: string;
+  /**
+   * The computed result value (as string to support text results like "Pass"/"Fail")
+   * @nullable
+   */
+  result: string | null;
+  /** Explanation of how the formula was constructed (bilingual) */
+  reasoning: string;
+  /** Category of formula (e.g., "conditional", "arithmetic", "lookup", "formatting") */
+  formulaType: string;
+  /** Visual formatting instructions implied by the description */
+  styleHints: StyleHint[];
+  /** AI confidence score 0-1 */
+  confidence: number;
+}
+
+export interface SmartHistoryItem {
+  id: number;
+  description: string;
+  formula: string;
+  /** @nullable */
+  result: string | null;
+  reasoning: string;
+  formulaType: string;
+  styleHints: StyleHint[];
+  confidence: number;
+  analyzedAt: string;
+}
+
 export interface ErrorResponse {
   error: string;
 }

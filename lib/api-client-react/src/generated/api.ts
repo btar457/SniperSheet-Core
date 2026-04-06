@@ -26,6 +26,9 @@ import type {
   ErrorResponse,
   ExecuteCommandBody,
   HealthStatus,
+  SmartAnalyzeBody,
+  SmartAnalyzeResult,
+  SmartHistoryItem,
 } from "./api.schemas";
 
 import { customFetch } from "../custom-fetch";
@@ -363,6 +366,169 @@ export const useCalculateCellDimensions = <
 > => {
   return useMutation(getCalculateCellDimensionsMutationOptions(options));
 };
+
+/**
+ * Parses a natural language description (Arabic or English) and generates an Excel formula, result, reasoning, and style hints using AI
+ * @summary AI-powered formula and logic generation
+ */
+export const getSmartAnalyzeUrl = () => {
+  return `/api/smart/analyze`;
+};
+
+export const smartAnalyze = async (
+  smartAnalyzeBody: SmartAnalyzeBody,
+  options?: RequestInit,
+): Promise<SmartAnalyzeResult> => {
+  return customFetch<SmartAnalyzeResult>(getSmartAnalyzeUrl(), {
+    ...options,
+    method: "POST",
+    headers: { "Content-Type": "application/json", ...options?.headers },
+    body: JSON.stringify(smartAnalyzeBody),
+  });
+};
+
+export const getSmartAnalyzeMutationOptions = <
+  TError = ErrorType<ErrorResponse>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof smartAnalyze>>,
+    TError,
+    { data: BodyType<SmartAnalyzeBody> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof smartAnalyze>>,
+  TError,
+  { data: BodyType<SmartAnalyzeBody> },
+  TContext
+> => {
+  const mutationKey = ["smartAnalyze"];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof smartAnalyze>>,
+    { data: BodyType<SmartAnalyzeBody> }
+  > = (props) => {
+    const { data } = props ?? {};
+
+    return smartAnalyze(data, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type SmartAnalyzeMutationResult = NonNullable<
+  Awaited<ReturnType<typeof smartAnalyze>>
+>;
+export type SmartAnalyzeMutationBody = BodyType<SmartAnalyzeBody>;
+export type SmartAnalyzeMutationError = ErrorType<ErrorResponse>;
+
+/**
+ * @summary AI-powered formula and logic generation
+ */
+export const useSmartAnalyze = <
+  TError = ErrorType<ErrorResponse>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof smartAnalyze>>,
+    TError,
+    { data: BodyType<SmartAnalyzeBody> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof smartAnalyze>>,
+  TError,
+  { data: BodyType<SmartAnalyzeBody> },
+  TContext
+> => {
+  return useMutation(getSmartAnalyzeMutationOptions(options));
+};
+
+/**
+ * Returns the last 20 smart AI commands
+ * @summary Get smart command history
+ */
+export const getGetSmartHistoryUrl = () => {
+  return `/api/smart/history`;
+};
+
+export const getSmartHistory = async (
+  options?: RequestInit,
+): Promise<SmartHistoryItem[]> => {
+  return customFetch<SmartHistoryItem[]>(getGetSmartHistoryUrl(), {
+    ...options,
+    method: "GET",
+  });
+};
+
+export const getGetSmartHistoryQueryKey = () => {
+  return [`/api/smart/history`] as const;
+};
+
+export const getGetSmartHistoryQueryOptions = <
+  TData = Awaited<ReturnType<typeof getSmartHistory>>,
+  TError = ErrorType<unknown>,
+>(options?: {
+  query?: UseQueryOptions<
+    Awaited<ReturnType<typeof getSmartHistory>>,
+    TError,
+    TData
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}) => {
+  const { query: queryOptions, request: requestOptions } = options ?? {};
+
+  const queryKey = queryOptions?.queryKey ?? getGetSmartHistoryQueryKey();
+
+  const queryFn: QueryFunction<Awaited<ReturnType<typeof getSmartHistory>>> = ({
+    signal,
+  }) => getSmartHistory({ signal, ...requestOptions });
+
+  return { queryKey, queryFn, ...queryOptions } as UseQueryOptions<
+    Awaited<ReturnType<typeof getSmartHistory>>,
+    TError,
+    TData
+  > & { queryKey: QueryKey };
+};
+
+export type GetSmartHistoryQueryResult = NonNullable<
+  Awaited<ReturnType<typeof getSmartHistory>>
+>;
+export type GetSmartHistoryQueryError = ErrorType<unknown>;
+
+/**
+ * @summary Get smart command history
+ */
+
+export function useGetSmartHistory<
+  TData = Awaited<ReturnType<typeof getSmartHistory>>,
+  TError = ErrorType<unknown>,
+>(options?: {
+  query?: UseQueryOptions<
+    Awaited<ReturnType<typeof getSmartHistory>>,
+    TError,
+    TData
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+  const queryOptions = getGetSmartHistoryQueryOptions(options);
+
+  const query = useQuery(queryOptions) as UseQueryResult<TData, TError> & {
+    queryKey: QueryKey;
+  };
+
+  return { ...query, queryKey: queryOptions.queryKey };
+}
 
 /**
  * Calculates optimal dimensions for a batch of cells based on their text content

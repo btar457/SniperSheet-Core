@@ -15,3 +15,7 @@ export * from "./commandResult";
 export * from "./errorResponse";
 export * from "./executeCommandBody";
 export * from "./healthStatus";
+export * from "./smartAnalyzeBody";
+export * from "./smartAnalyzeResult";
+export * from "./smartHistoryItem";
+export * from "./styleHint";

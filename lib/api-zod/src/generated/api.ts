@@ -85,6 +85,105 @@ export const CalculateCellDimensionsResponse = zod.object({
 });
 
 /**
+ * Parses a natural language description (Arabic or English) and generates an Excel formula, result, reasoning, and style hints using AI
+ * @summary AI-powered formula and logic generation
+ */
+export const SmartAnalyzeBody = zod.object({
+  description: zod
+    .string()
+    .describe(
+      "Natural language description of the desired Excel logic (Arabic or English)",
+    ),
+  values: zod
+    .array(zod.number())
+    .optional()
+    .describe("Optional numeric values to use in calculations"),
+  cellRef: zod
+    .string()
+    .nullish()
+    .describe('Optional cell reference context (e.g., \"A1\", \"B2:B10\")'),
+});
+
+export const SmartAnalyzeResponse = zod.object({
+  formula: zod.string().describe("The generated Excel formula"),
+  result: zod
+    .string()
+    .nullable()
+    .describe(
+      'The computed result value (as string to support text results like \"Pass\"\/\"Fail\")',
+    ),
+  reasoning: zod
+    .string()
+    .describe("Explanation of how the formula was constructed (bilingual)"),
+  formulaType: zod
+    .string()
+    .describe(
+      'Category of formula (e.g., \"conditional\", \"arithmetic\", \"lookup\", \"formatting\")',
+    ),
+  styleHints: zod
+    .array(
+      zod.object({
+        target: zod
+          .string()
+          .describe(
+            'What the style applies to (e.g., \"cell\", \"text\", \"background\")',
+          ),
+        color: zod
+          .string()
+          .nullish()
+          .describe('Color value (e.g., \"red\", \"#FF0000\", \"green\")'),
+        bold: zod.boolean().nullish(),
+        italic: zod.boolean().nullish(),
+        condition: zod
+          .string()
+          .nullish()
+          .describe(
+            'The condition that triggers this style (e.g., \"value < 50\")',
+          ),
+      }),
+    )
+    .describe("Visual formatting instructions implied by the description"),
+  confidence: zod.number().describe("AI confidence score 0-1"),
+});
+
+/**
+ * Returns the last 20 smart AI commands
+ * @summary Get smart command history
+ */
+export const GetSmartHistoryResponseItem = zod.object({
+  id: zod.number(),
+  description: zod.string(),
+  formula: zod.string(),
+  result: zod.string().nullable(),
+  reasoning: zod.string(),
+  formulaType: zod.string(),
+  styleHints: zod.array(
+    zod.object({
+      target: zod
+        .string()
+        .describe(
+          'What the style applies to (e.g., \"cell\", \"text\", \"background\")',
+        ),
+      color: zod
+        .string()
+        .nullish()
+        .describe('Color value (e.g., \"red\", \"#FF0000\", \"green\")'),
+      bold: zod.boolean().nullish(),
+      italic: zod.boolean().nullish(),
+      condition: zod
+        .string()
+        .nullish()
+        .describe(
+          'The condition that triggers this style (e.g., \"value < 50\")',
+        ),
+    }),
+  ),
+  confidence: zod.number(),
+  analyzedAt: zod.coerce.date(),
+});
+export const GetSmartHistoryResponse = zod.array(GetSmartHistoryResponseItem);
+
+/**
  * Calculates optimal dimensions for a batch of cells based on their text content
  * @summary Calculate dimensions for multiple cells
  */
