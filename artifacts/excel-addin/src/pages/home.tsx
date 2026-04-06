@@ -61,7 +61,7 @@ export default function Home() {
       <footer className="flex-none border-t border-border bg-muted/20 px-3 py-1.5 flex items-center justify-between">
         <span className="text-[10px] text-muted-foreground truncate">Mustafa Alsahlany</span>
         <button
-          onClick={() => window.open("/api/help", "_blank")}
+          onClick={() => window.open("/help", "_blank")}
           className="flex items-center gap-1 text-[11px] font-medium text-primary hover:text-primary/80 transition-colors"
           title="Open SniperSheet Official Guide"
         >
