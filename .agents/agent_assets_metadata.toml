@@ -48,3 +48,9 @@ id = "1ttDAuds1lXzSbQsmX11c"
 uri = "file://SniperSheet_Official_Guide_EN.pdf"
 type = "pdf"
 title = "SniperSheet Official Guide EN — v2 FINAL — 17 Pages — Clean & Professional"
+
+[[outputs]]
+id = "4rgQgq6uN_UscQTefQ8gI"
+uri = "file://SniperSheet_manifest.xml"
+type = "unspecified"
+title = "SniperSheet manifest.xml — Ready for Excel Upload"
