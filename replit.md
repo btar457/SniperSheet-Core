@@ -37,7 +37,7 @@ pnpm workspace monorepo using TypeScript. Each package manages its own dependenc
 
 ## Architecture Notes
 
-- **Smart Hub AI**: Uses `@workspace/integrations-openai-ai-server` → single-shot JSON structured response from `gpt-5-mini`. System prompt forces bilingual reasoning + styleHints for formatting commands.
+- **Smart Hub Engine**: 100% free rule-based formula engine (`artifacts/api-server/src/lib/formula-engine.ts`). Zero API calls, zero cost. Covers 35+ patterns in Arabic & English: overtime, pass/fail, grade scales, SUMIF, AVERAGEIF, COUNTIF, VLOOKUP/XLOOKUP, INDEX-MATCH, MAX/MIN, RANK, percentages, taxes, salary, dates, PMT, text functions, rounding, IF conditions, arithmetic. Responds in <10ms.
 - **Word Radar**: Client-side only (`src/lib/word-radar.ts`). Uses a Levenshtein distance dictionary scan against known Excel functions + Arabic/English keywords. Runs reactively on every keystroke via `useMemo`.
 - **Empty Field Radar**: Client-side grid analysis. Parses CSV/tab-separated text into a 2D array, highlights empty cells with a visual grid preview and position list (e.g., "A2, C4").
 - **Smart Print-Fit**: Client-side calculation. A4/A3 paper dimensions in mm → Excel column width units, scaling percentage, recommended font size.
