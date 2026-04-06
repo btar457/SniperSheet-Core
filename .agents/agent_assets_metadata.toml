@@ -24,3 +24,9 @@ id = "PMfCwIZGOGcsAlW06cfVZ"
 uri = "file://SniperSheet-Guide-AR.pdf"
 type = "pdf"
 title = "دليل SniperSheet — النسخة العربية (7 صفحات)"
+
+[[outputs]]
+id = "6_74XYPJCDFJjadDDFbwN"
+uri = "file://SniperSheet_Master_Edition.pdf"
+type = "pdf"
+title = "SniperSheet Master Edition — 17-Page Bilingual PDF"
