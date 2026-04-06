@@ -8,7 +8,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { ScrollArea } from "@/components/ui/scroll-area";
+
 import { Badge } from "@/components/ui/badge";
 
 // ─── PAPER SIZE CONSTANTS ──────────────────────────────────────────────────
@@ -532,8 +532,8 @@ export function ToolsTab() {
   ];
 
   return (
-    <ScrollArea className="h-full">
-      <div className="p-4 space-y-3 pb-8">
+    <div>
+      <div className="px-[10px] pt-3 pb-8 space-y-3">
         <div className="rounded-lg bg-gradient-to-br from-slate-100 via-slate-50 to-transparent dark:from-slate-800 dark:via-slate-900 border border-border p-3">
           <div className="flex items-center gap-2">
             <Grid3X3 className="w-4 h-4 text-primary" />
@@ -571,6 +571,6 @@ export function ToolsTab() {
           </div>
         ))}
       </div>
-    </ScrollArea>
+    </div>
   );
 }

@@ -22,7 +22,7 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Textarea } from "@/components/ui/textarea";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { ScrollArea } from "@/components/ui/scroll-area";
+
 
 const cellDimensionSchema = z.object({
   text: z.string().min(1, "النص مطلوب / Text is required"),
@@ -110,9 +110,9 @@ export function CellDimensionsTab() {
   }
 
   return (
-    <div className="flex flex-col h-full overflow-hidden">
-      <Tabs defaultValue="single" className="flex flex-col h-full w-full">
-        <div className="px-4 pt-4 pb-2">
+    <div>
+      <Tabs defaultValue="single" className="flex flex-col w-full">
+        <div className="px-[10px] pt-3 pb-2">
           <TabsList className="grid w-full grid-cols-2 h-8">
             <TabsTrigger value="single" className="text-xs" data-testid="tab-single-cell">
               خلية واحدة / Single
@@ -123,8 +123,8 @@ export function CellDimensionsTab() {
           </TabsList>
         </div>
 
-        <ScrollArea className="flex-1">
-          <div className="px-4 pb-6">
+        <div>
+          <div className="px-[10px] pb-8">
             {/* Single Cell Tab */}
             <TabsContent value="single" className="mt-0 space-y-4">
               <Form {...singleForm}>
@@ -390,7 +390,7 @@ export function CellDimensionsTab() {
               )}
             </TabsContent>
           </div>
-        </ScrollArea>
+        </div>
       </Tabs>
     </div>
   );

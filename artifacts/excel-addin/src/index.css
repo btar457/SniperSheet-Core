@@ -209,3 +209,36 @@
     pointer-events: none;
   }
 }
+
+/* ─── Scroll UX — mobile-first ─────────────────────────────────────────── */
+
+/* Main scroll container */
+.sniper-scroll {
+  -webkit-overflow-scrolling: touch;   /* smooth momentum on iOS */
+  overscroll-behavior-y: contain;      /* prevent page bounce bleed */
+}
+
+/* Thin visible scrollbar — appears while scrolling, fades when idle */
+.sniper-scroll::-webkit-scrollbar {
+  width: 3px;
+}
+.sniper-scroll::-webkit-scrollbar-track {
+  background: transparent;
+}
+.sniper-scroll::-webkit-scrollbar-thumb {
+  background: hsl(var(--muted-foreground) / 0.35);
+  border-radius: 2px;
+  transition: background 0.2s;
+}
+.sniper-scroll::-webkit-scrollbar-thumb:hover {
+  background: hsl(var(--muted-foreground) / 0.65);
+}
+/* Firefox */
+.sniper-scroll {
+  scrollbar-width: thin;
+  scrollbar-color: hsl(var(--muted-foreground) / 0.35) transparent;
+}
+
+/* Hide scrollbar on tab strip — swipe-only UX */
+.scrollbar-none::-webkit-scrollbar { display: none; }
+.scrollbar-none { scrollbar-width: none; }

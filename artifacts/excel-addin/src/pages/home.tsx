@@ -18,7 +18,7 @@ export default function Home() {
   ];
 
   return (
-    <div className="flex flex-col w-full h-screen max-w-[400px] bg-background border-r border-border overflow-hidden m-0 shadow-xl">
+    <div className="flex flex-col w-full h-screen max-w-[400px] bg-background border-r border-border overflow-x-hidden m-0 shadow-xl">
       {/* Header */}
       <header className="flex-none bg-card border-b border-border px-3 py-2 flex items-center gap-2">
         <div className="w-7 h-7 bg-primary rounded-md flex items-center justify-center text-primary-foreground shadow-sm flex-none">
@@ -30,16 +30,16 @@ export default function Home() {
         </div>
       </header>
 
-      {/* Tab Navigation — 4 compact tabs */}
-      <div className="flex-none flex border-b border-border bg-muted/20">
+      {/* Tab Navigation — horizontally scrollable so all 4 tabs are always reachable */}
+      <div className="flex-none flex border-b border-border bg-muted/20 overflow-x-auto scrollbar-none snap-x snap-mandatory">
         {tabs.map((tab) => (
           <button
             key={tab.id}
             onClick={() => setActiveTab(tab.id)}
-            className={`flex-1 flex flex-col items-center justify-center gap-0.5 py-1.5 text-[10px] font-medium transition-all border-b-2 ${
+            className={`flex-none min-w-[72px] flex-1 flex flex-col items-center justify-center gap-0.5 py-1.5 text-[10px] font-medium transition-all border-b-2 snap-start touch-manipulation select-none ${
               activeTab === tab.id
                 ? "border-primary text-primary bg-background"
-                : "border-transparent text-muted-foreground hover:text-foreground hover:bg-muted/40"
+                : "border-transparent text-muted-foreground hover:text-foreground hover:bg-muted/40 active:bg-muted/60"
             }`}
             data-testid={`nav-${tab.id}`}
           >
@@ -49,8 +49,8 @@ export default function Home() {
         ))}
       </div>
 
-      {/* Content Area */}
-      <main className="flex-1 min-h-0 overflow-hidden relative bg-background">
+      {/* Content Area — native vertical scroll, touch-friendly, 10px side padding */}
+      <main className="flex-1 min-h-0 overflow-y-auto overflow-x-hidden relative bg-background touch-pan-y sniper-scroll">
         {activeTab === "smart"      && <SmartHubTab />}
         {activeTab === "commands"   && <CommandsTab />}
         {activeTab === "dimensions" && <CellDimensionsTab />}

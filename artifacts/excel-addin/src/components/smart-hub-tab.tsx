@@ -20,7 +20,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { ScrollArea } from "@/components/ui/scroll-area";
+
 import { Alert, AlertDescription } from "@/components/ui/alert";
 
 const FORMULA_TYPE_CONFIG: Record<string, { label: string; arLabel: string; icon: React.ReactNode; color: string }> = {
@@ -125,9 +125,8 @@ export function SmartHubTab() {
   const typeConf = lastResult ? (FORMULA_TYPE_CONFIG[lastResult.formulaType] ?? FORMULA_TYPE_CONFIG.arithmetic) : null;
 
   return (
-    <div className="flex flex-col h-full gap-0 overflow-hidden">
-      <ScrollArea className="flex-1">
-        <div className="p-4 space-y-4 pb-6">
+    <div>
+        <div className="px-[10px] pt-3 pb-8 space-y-4">
 
           {/* Header Banner */}
           <div className="rounded-lg bg-gradient-to-br from-primary/10 via-primary/5 to-transparent border border-primary/20 p-3">
@@ -439,7 +438,6 @@ export function SmartHubTab() {
             )}
           </div>
         </div>
-      </ScrollArea>
     </div>
   );
 }

@@ -23,7 +23,7 @@ import {
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { ScrollArea } from "@/components/ui/scroll-area";
+
 import { Alert, AlertDescription } from "@/components/ui/alert";
 
 const COMMAND_REFERENCE = [
@@ -91,7 +91,7 @@ export function CommandsTab() {
   }
 
   return (
-    <div className="flex flex-col h-full gap-3 p-4">
+    <div className="flex flex-col gap-3 px-[10px] pt-3 pb-8">
       <Card className="shadow-xs border-border flex-none">
         <CardHeader className="p-4 pb-2">
           <CardTitle className="text-sm font-semibold flex items-center gap-2">
@@ -262,7 +262,7 @@ export function CommandsTab() {
       </div>
 
       {/* History */}
-      <div className="flex flex-col flex-1 min-h-0 overflow-hidden">
+      <div className="flex flex-col">
         <div className="flex items-center gap-1.5 mb-2 px-1">
           <Clock className="w-3 h-3 text-muted-foreground" />
           <h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
@@ -270,7 +270,7 @@ export function CommandsTab() {
           </h3>
         </div>
 
-        <ScrollArea className="flex-1 -mx-4 px-4">
+        <div>
           <div className="space-y-2 pb-4">
             {isLoadingHistory ? (
               <div className="text-xs text-center text-muted-foreground py-4">جاري التحميل...</div>
@@ -304,7 +304,7 @@ export function CommandsTab() {
               ))
             )}
           </div>
-        </ScrollArea>
+        </div>
       </div>
     </div>
   );
