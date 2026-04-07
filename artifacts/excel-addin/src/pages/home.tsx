@@ -11,7 +11,7 @@ export default function Home() {
 
   const tabs: { id: Tab; arLabel: string; enLabel: string; icon: React.ReactNode }[] = [
     { id: "smart",      arLabel: "الذكي",  enLabel: "Smart",  icon: <Sparkles className="w-3.5 h-3.5" /> },
-    { id: "dimensions", arLabel: "أبعاد",  enLabel: "Dims",   icon: <Grid3X3 className="w-3.5 h-3.5" /> },
+    { id: "dimensions", arLabel: "تنسيق",  enLabel: "Format", icon: <Grid3X3 className="w-3.5 h-3.5" /> },
     { id: "tools",      arLabel: "أدوات",  enLabel: "Tools",  icon: <Wrench className="w-3.5 h-3.5" /> },
   ];
 
