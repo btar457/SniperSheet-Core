@@ -6,34 +6,17 @@
   xmlns:ov="http://schemas.microsoft.com/office/taskpaneappversionoverrides"
   xsi:type="TaskPaneApp">
 
-  <!--
-    ╔══════════════════════════════════════════════════════════════╗
-    ║   SniperSheet Excel Add-in  ·  Manifest v1.1  PRODUCTION    ║
-    ║   Provider  : Mustafa Alsahlany                              ║
-    ║   Add-in ID : 676b34f8-2a49-4066-8bbe-d3aabc46719d          ║
-    ║   Version   : 1.0.0.0                                        ║
-    ║   Domain    : node-runner-mustafaalshlany.replit.app         ║
-    ╚══════════════════════════════════════════════════════════════╝
-  -->
-
   <Id>676b34f8-2a49-4066-8bbe-d3aabc46719d</Id>
   <Version>1.0.0.0</Version>
   <ProviderName>Mustafa Alsahlany</ProviderName>
-  <DefaultLocale>ar-SA</DefaultLocale>
+  <DefaultLocale>en-US</DefaultLocale>
 
-  <DisplayName DefaultValue="SniperSheet: AI Formula Engine">
-    <bt:Override Locale="ar-SA" Value="سنابيرشيت: محرك المعادلات الذكي" />
-    <bt:Override Locale="en-US" Value="SniperSheet: AI Formula Engine" />
-  </DisplayName>
-
-  <Description DefaultValue="Advanced AI-powered Excel add-in for engineering and financial formulas. Developed by Mustafa Alsahlany.">
-    <bt:Override Locale="ar-SA" Value="إضافة إكسل الاحترافية المدعومة بالذكاء الاصطناعي لتوليد المعادلات الهندسية والمالية. تطوير مصطفى السهلاني." />
-    <bt:Override Locale="en-US" Value="Advanced AI-powered Excel add-in for engineering and financial formulas. Developed by Mustafa Alsahlany." />
-  </Description>
+  <DisplayName DefaultValue="SniperSheet" />
+  <Description DefaultValue="Advanced AI-powered Excel add-in for engineering and financial formulas. Developed by Mustafa Alsahlany." />
 
   <IconUrl DefaultValue="https://node-runner-mustafaalshlany.replit.app/api/addin/icon-32.png" />
   <HighResolutionIconUrl DefaultValue="https://node-runner-mustafaalshlany.replit.app/api/addin/icon-80.png" />
-  <SupportUrl DefaultValue="https://node-runner-mustafaalshlany.replit.app/excel-addin/" />
+  <SupportUrl DefaultValue="https://node-runner-mustafaalshlany.replit.app" />
 
   <AppDomains>
     <AppDomain>https://node-runner-mustafaalshlany.replit.app</AppDomain>
@@ -96,32 +79,14 @@
         <bt:Url id="Taskpane.Url" DefaultValue="https://node-runner-mustafaalshlany.replit.app/excel-addin/" />
       </bt:Urls>
       <bt:ShortStrings>
-        <bt:String id="Tab.Label" DefaultValue="SniperSheet">
-          <bt:Override Locale="ar-SA" Value="سنابيرشيت" />
-          <bt:Override Locale="en-US" Value="SniperSheet" />
-        </bt:String>
-        <bt:String id="Group.Label" DefaultValue="أدوات ذكية">
-          <bt:Override Locale="ar-SA" Value="أدوات ذكية" />
-          <bt:Override Locale="en-US" Value="Smart Tools" />
-        </bt:String>
-        <bt:String id="Button.Label" DefaultValue="فتح المحرك الذكي">
-          <bt:Override Locale="ar-SA" Value="فتح المحرك الذكي" />
-          <bt:Override Locale="en-US" Value="Open Sniper Hub" />
-        </bt:String>
-        <bt:String id="Button.Title" DefaultValue="SniperSheet: AI Formula Engine">
-          <bt:Override Locale="ar-SA" Value="سنابيرشيت: محرك المعادلات الذكي" />
-          <bt:Override Locale="en-US" Value="SniperSheet: AI Formula Engine" />
-        </bt:String>
-        <bt:String id="Taskpane.Title" DefaultValue="SniperSheet">
-          <bt:Override Locale="ar-SA" Value="سنابيرشيت" />
-          <bt:Override Locale="en-US" Value="SniperSheet" />
-        </bt:String>
+        <bt:String id="Tab.Label" DefaultValue="SniperSheet" />
+        <bt:String id="Group.Label" DefaultValue="Smart Tools" />
+        <bt:String id="Button.Label" DefaultValue="Open SniperSheet" />
+        <bt:String id="Button.Title" DefaultValue="SniperSheet" />
+        <bt:String id="Taskpane.Title" DefaultValue="SniperSheet" />
       </bt:ShortStrings>
       <bt:LongStrings>
-        <bt:String id="Button.Tooltip" DefaultValue="افتح محرك سنابيرشيت الذكي لتوليد معادلات إكسل من اللغة الطبيعية.">
-          <bt:Override Locale="ar-SA" Value="افتح محرك سنابيرشيت الذكي لتوليد معادلات إكسل من اللغة الطبيعية بالعربية أو الإنجليزية." />
-          <bt:Override Locale="en-US" Value="Open SniperSheet AI engine to generate Excel formulas from English or Arabic natural language descriptions." />
-        </bt:String>
+        <bt:String id="Button.Tooltip" DefaultValue="Open SniperSheet AI engine to generate Excel formulas from English or Arabic natural language descriptions." />
       </bt:LongStrings>
     </Resources>
   </VersionOverrides>
