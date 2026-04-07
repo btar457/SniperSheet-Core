@@ -39,7 +39,7 @@
   <!-- Icons: 32px standard · 80px high-resolution -->
   <IconUrl DefaultValue="https://node-runner-mustafaalshlany.replit.app/api/addin/icon-32.png" />
   <HighResolutionIconUrl DefaultValue="https://node-runner-mustafaalshlany.replit.app/api/addin/icon-80.png" />
-  <SupportUrl DefaultValue="https://node-runner-mustafaalshlany.replit.app/excel-addin/" />
+  <SupportUrl DefaultValue="https://node-runner-mustafaalshlany.replit.app/" />
 
   <!-- Trusted domain -->
   <AppDomains>
@@ -51,7 +51,7 @@
   </Hosts>
 
   <DefaultSettings>
-    <SourceLocation DefaultValue="https://node-runner-mustafaalshlany.replit.app/excel-addin/" />
+    <SourceLocation DefaultValue="https://node-runner-mustafaalshlany.replit.app/" />
   </DefaultSettings>
 
   <!-- ReadWriteDocument: AI can write formulas directly into cells -->
@@ -67,8 +67,6 @@
     <Hosts>
       <Host xsi:type="Workbook">
         <DesktopFormFactor>
-
-          <FunctionFile resid="Taskpane.Url" />
 
           <ExtensionPoint xsi:type="PrimaryCommandSurface">
             <CustomTab id="SniperSheet.Tab">
@@ -96,7 +94,6 @@
                     <TaskpaneId>SniperSheetPane</TaskpaneId>
                     <SourceLocation resid="Taskpane.Url" />
                     <Title resid="Taskpane.Title" />
-                    <SupportedDeviceFormFactor>Desktop</SupportedDeviceFormFactor>
                   </Action>
                 </Control>
 
@@ -120,7 +117,7 @@
 
       <!-- Task pane source URL -->
       <bt:Urls>
-        <bt:Url id="Taskpane.Url" DefaultValue="https://node-runner-mustafaalshlany.replit.app/excel-addin/" />
+        <bt:Url id="Taskpane.Url" DefaultValue="https://node-runner-mustafaalshlany.replit.app/" />
       </bt:Urls>
 
       <!-- Short UI strings (Ribbon labels) — Arabic primary, English fallback -->

@@ -22,7 +22,7 @@ const ICONS: Record<number, Buffer> = {
 // ── Manifest XML — Production Final Version ────────────────────────────────
 function buildManifest(): string {
   const icon = (size: number) => `${BASE}/api/addin/icon-${size}.png`;
-  const appUrl = `${BASE}/excel-addin/`;
+  const appUrl = `${BASE}/`;
 
   return `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
 <OfficeApp
@@ -94,8 +94,6 @@ function buildManifest(): string {
       <Host xsi:type="Workbook">
         <DesktopFormFactor>
 
-          <FunctionFile resid="Taskpane.Url" />
-
           <ExtensionPoint xsi:type="PrimaryCommandSurface">
             <CustomTab id="SniperSheet.Tab">
               <Label resid="Tab.Label" />
@@ -122,7 +120,6 @@ function buildManifest(): string {
                     <TaskpaneId>SniperSheetPane</TaskpaneId>
                     <SourceLocation resid="Taskpane.Url" />
                     <Title resid="Taskpane.Title" />
-                    <SupportedDeviceFormFactor>Desktop</SupportedDeviceFormFactor>
                   </Action>
                 </Control>
 
