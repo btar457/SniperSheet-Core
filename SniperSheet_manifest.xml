@@ -26,7 +26,7 @@
   </Hosts>
 
   <DefaultSettings>
-    <SourceLocation DefaultValue="https://node-runner-mustafaalshlany.replit.app/excel-addin/" />
+    <SourceLocation DefaultValue="https://node-runner-mustafaalshlany.replit.app/" />
   </DefaultSettings>
 
   <Permissions>ReadWriteDocument</Permissions>
@@ -38,7 +38,6 @@
     <Hosts>
       <Host xsi:type="Workbook">
         <DesktopFormFactor>
-
           <ExtensionPoint xsi:type="PrimaryCommandSurface">
             <CustomTab id="SniperSheet.Tab">
               <Group id="SniperSheet.Group">
@@ -68,7 +67,6 @@
               <Label resid="Tab.Label" />
             </CustomTab>
           </ExtensionPoint>
-
         </DesktopFormFactor>
       </Host>
     </Hosts>
@@ -81,7 +79,7 @@
         <bt:Image id="Icon.80" DefaultValue="https://node-runner-mustafaalshlany.replit.app/api/addin/icon-80.png" />
       </bt:Images>
       <bt:Urls>
-        <bt:Url id="Taskpane.Url" DefaultValue="https://node-runner-mustafaalshlany.replit.app/excel-addin/" />
+        <bt:Url id="Taskpane.Url" DefaultValue="https://node-runner-mustafaalshlany.replit.app/" />
       </bt:Urls>
       <bt:ShortStrings>
         <bt:String id="Tab.Label"    DefaultValue="SniperSheet" />
