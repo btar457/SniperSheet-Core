@@ -1,12 +1,11 @@
 import { useState } from "react";
-import { ChevronDown, ChevronUp, Sliders, Printer, Grid3X3 } from "lucide-react";
+import { ChevronDown, ChevronUp, Sliders, Printer } from "lucide-react";
 
 import { useSelectionSensor } from "@/hooks/use-selection-sensor";
 import { CellDimensionsCard } from "@/components/cell-dimensions-card";
 import { SmartPrintCard } from "@/components/smart-print-card";
-import { ContextActionsCard } from "@/components/context-actions-card";
 
-type Section = "dimensions" | "format" | "print";
+type Section = "dimensions" | "print";
 
 export function ToolsTab() {
   const [open, setOpen] = useState<Section | null>("dimensions");
@@ -25,13 +24,6 @@ export function ToolsTab() {
       enTitle: "Cell Dimensions & Format",
       icon: <Sliders className="w-3.5 h-3.5 text-violet-500" />,
       borderColor: "border-violet-200 dark:border-violet-800",
-    },
-    {
-      id: "format",
-      arTitle: "التنسيق البصري والألوان",
-      enTitle: "Visual Formatting & Colors",
-      icon: <Grid3X3 className="w-3.5 h-3.5 text-pink-500" />,
-      borderColor: "border-pink-200 dark:border-pink-800",
     },
     {
       id: "print",
@@ -92,9 +84,6 @@ export function ToolsTab() {
             <div className="mt-1.5 animate-in fade-in slide-in-from-top-1">
               {s.id === "dimensions" && (
                 <CellDimensionsCard selection={selection} isWatching={isWatching} />
-              )}
-              {s.id === "format" && (
-                <ContextActionsCard selection={selection} />
               )}
               {s.id === "print" && (
                 <SmartPrintCard selection={selection} isWatching={isWatching} />
