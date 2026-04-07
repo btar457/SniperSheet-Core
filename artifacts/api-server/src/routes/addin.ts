@@ -2,11 +2,13 @@ import express, { Router, type IRouter } from "express";
 
 const router: IRouter = Router();
 
-// ── Production base URL (Replit Autoscale domain) ─────────────────────────
-const BASE =
-  process.env.REPLIT_DOMAINS
-    ? `https://${process.env.REPLIT_DOMAINS.split(",")[0].trim()}`
-    : "https://8e832e48-8f9e-4168-9828-29c19ce7accc-00-12f81e1kjeof1.picard.replit.dev";
+// ── Production base URL ────────────────────────────────────────────────────
+// In production REPLIT_DOMAINS = "node-runner-mustafaalshlany.replit.app"
+// In dev it returns a picard.replit.dev preview domain — always use .replit.app
+const rawDomain = process.env.REPLIT_DOMAINS?.split(",")[0].trim() ?? "";
+const BASE = rawDomain.endsWith(".replit.app")
+  ? `https://${rawDomain}`
+  : "https://node-runner-mustafaalshlany.replit.app";
 
 // ── Solid-green PNG icons (#107C41) inlined as base64 ──────────────────────
 // Sizes: 16, 32, 64, 80  (64 added per Office Store guidelines)
