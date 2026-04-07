@@ -43,6 +43,7 @@ export interface RangeFormat {
   fillColor: string | null;
   fontColor: string | null;
   horizontalAlignment: string | null;
+  verticalAlignment: string | null;
   wrapText: boolean;
 }
 
@@ -177,7 +178,7 @@ export async function readSelectionFormat(): Promise<RangeFormat | null> {
     let fmt: RangeFormat = {
       columnWidth: null, rowHeight: null, fontSize: null, fontName: null,
       bold: false, italic: false, underline: false, fillColor: null,
-      fontColor: null, horizontalAlignment: null, wrapText: false,
+      fontColor: null, horizontalAlignment: null, verticalAlignment: null, wrapText: false,
     };
     await Excel.run(async (context: any) => {
       const range = context.workbook.getSelectedRange();
@@ -186,7 +187,8 @@ export async function readSelectionFormat(): Promise<RangeFormat | null> {
         "format/font/size", "format/font/name", "format/font/bold",
         "format/font/italic", "format/font/underline",
         "format/fill/color", "format/font/color",
-        "format/horizontalAlignment", "format/wrapText",
+        "format/horizontalAlignment", "format/verticalAlignment",
+        "format/wrapText",
       ]);
       await context.sync();
       fmt = {
@@ -200,6 +202,7 @@ export async function readSelectionFormat(): Promise<RangeFormat | null> {
         fillColor:   range.format.fill.color  ?? null,
         fontColor:   range.format.font.color  ?? null,
         horizontalAlignment: range.format.horizontalAlignment ?? null,
+        verticalAlignment:   range.format.verticalAlignment   ?? null,
         wrapText:    range.format.wrapText === true,
       };
     });
@@ -224,6 +227,7 @@ export async function applySelectionFormat(changes: Partial<RangeFormat>): Promi
       if (changes.fillColor   != null)       range.format.fill.color  = resolveColor(changes.fillColor);
       if (changes.fontColor   != null)       range.format.font.color  = resolveColor(changes.fontColor);
       if (changes.horizontalAlignment != null) range.format.horizontalAlignment = changes.horizontalAlignment;
+      if (changes.verticalAlignment   != null) range.format.verticalAlignment   = changes.verticalAlignment;
       if (changes.wrapText    != null)       range.format.wrapText    = changes.wrapText;
       await context.sync();
     });
@@ -280,6 +284,136 @@ export async function smartCopyFormulaToRange(sourceAddress: string, targetAddre
 }
 
 // ─── PRINT AREA ───────────────────────────────────────────────────────────────
+
+// ─── AUTO FIT ─────────────────────────────────────────────────────────────────
+
+export async function autoFitSelectionColumns(): Promise<ActionResult> {
+  if (!isExcelAvailable()) return { ok: false, error: "Excel not available" };
+  try {
+    await Excel.run(async (context: any) => {
+      const range = context.workbook.getSelectedRange();
+      range.format.autofitColumns();
+      await context.sync();
+    });
+    return { ok: true, message: "Columns auto-fitted" };
+  } catch (e: any) {
+    return { ok: false, error: e?.message ?? "AutoFit failed" };
+  }
+}
+
+export async function autoFitSelectionRows(): Promise<ActionResult> {
+  if (!isExcelAvailable()) return { ok: false, error: "Excel not available" };
+  try {
+    await Excel.run(async (context: any) => {
+      const range = context.workbook.getSelectedRange();
+      range.format.autofitRows();
+      await context.sync();
+    });
+    return { ok: true, message: "Rows auto-fitted" };
+  } catch (e: any) {
+    return { ok: false, error: e?.message ?? "AutoFit failed" };
+  }
+}
+
+// ─── BORDERS ─────────────────────────────────────────────────────────────────
+
+export type BorderPreset = "none" | "all" | "outside" | "thick" | "dashed";
+
+export async function applyBorderPreset(preset: BorderPreset): Promise<ActionResult> {
+  if (!isExcelAvailable()) return { ok: false, error: "Excel not available" };
+  try {
+    await Excel.run(async (context: any) => {
+      const range = context.workbook.getSelectedRange();
+      const fmt = range.format;
+      const sides = ["EdgeTop", "EdgeBottom", "EdgeLeft", "EdgeRight", "InsideHorizontal", "InsideVertical"] as const;
+
+      if (preset === "none") {
+        sides.forEach((s) => {
+          fmt.borders.getItem(s).style = Excel.BorderLineStyle.none;
+        });
+      } else if (preset === "all") {
+        sides.forEach((s) => {
+          fmt.borders.getItem(s).style = Excel.BorderLineStyle.continuous;
+          fmt.borders.getItem(s).weight = Excel.BorderWeight.thin;
+          fmt.borders.getItem(s).color = "#000000";
+        });
+      } else if (preset === "outside") {
+        const inner = ["InsideHorizontal", "InsideVertical"] as const;
+        const outer = ["EdgeTop", "EdgeBottom", "EdgeLeft", "EdgeRight"] as const;
+        inner.forEach((s) => { fmt.borders.getItem(s).style = Excel.BorderLineStyle.none; });
+        outer.forEach((s) => {
+          fmt.borders.getItem(s).style = Excel.BorderLineStyle.continuous;
+          fmt.borders.getItem(s).weight = Excel.BorderWeight.medium;
+          fmt.borders.getItem(s).color = "#000000";
+        });
+      } else if (preset === "thick") {
+        sides.forEach((s) => {
+          fmt.borders.getItem(s).style = Excel.BorderLineStyle.continuous;
+          fmt.borders.getItem(s).weight = Excel.BorderWeight.thick;
+          fmt.borders.getItem(s).color = "#000000";
+        });
+      } else if (preset === "dashed") {
+        sides.forEach((s) => {
+          fmt.borders.getItem(s).style = Excel.BorderLineStyle.dash;
+          fmt.borders.getItem(s).weight = Excel.BorderWeight.thin;
+          fmt.borders.getItem(s).color = "#666666";
+        });
+      }
+      await context.sync();
+    });
+    return { ok: true, message: `Border preset "${preset}" applied` };
+  } catch (e: any) {
+    return { ok: false, error: e?.message ?? "Border apply failed" };
+  }
+}
+
+// ─── NUMBER FORMAT ────────────────────────────────────────────────────────────
+
+export async function applyNumberFormat(formatCode: string): Promise<ActionResult> {
+  if (!isExcelAvailable()) return { ok: false, error: "Excel not available" };
+  try {
+    await Excel.run(async (context: any) => {
+      const range = context.workbook.getSelectedRange();
+      range.numberFormat = [[formatCode]];
+      await context.sync();
+    });
+    return { ok: true, message: `Number format applied` };
+  } catch (e: any) {
+    return { ok: false, error: e?.message ?? "Number format failed" };
+  }
+}
+
+// ─── MERGE / UNMERGE ──────────────────────────────────────────────────────────
+
+export async function mergeCells(): Promise<ActionResult> {
+  if (!isExcelAvailable()) return { ok: false, error: "Excel not available" };
+  try {
+    await Excel.run(async (context: any) => {
+      const range = context.workbook.getSelectedRange();
+      range.merge(false);
+      await context.sync();
+    });
+    return { ok: true, message: "Cells merged" };
+  } catch (e: any) {
+    return { ok: false, error: e?.message ?? "Merge failed" };
+  }
+}
+
+export async function unmergeCells(): Promise<ActionResult> {
+  if (!isExcelAvailable()) return { ok: false, error: "Excel not available" };
+  try {
+    await Excel.run(async (context: any) => {
+      const range = context.workbook.getSelectedRange();
+      range.unmerge();
+      await context.sync();
+    });
+    return { ok: true, message: "Cells unmerged" };
+  } catch (e: any) {
+    return { ok: false, error: e?.message ?? "Unmerge failed" };
+  }
+}
+
+// ─── READ SELECTION VALUES ─────────────────────────────────────────────────────
 
 export async function readSelectionValues(): Promise<{ headers: string[]; rows: string[][] } | null> {
   if (!isExcelAvailable()) return null;
