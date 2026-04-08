@@ -21,14 +21,13 @@ jobs:
       - name: Set up Node.js version
         uses: actions/setup-node@v3
         with:
-          node-version: '20'
+          node-version: '20.x'
 
-      - name: Install pnpm
-        run: npm install -g pnpm
-      - name: pnpm install, build
+      - name: npm install, build, and test
         run: |
-         pnpm install
-         pnpm run build --if-present
+          npm install
+          npm run build --if-present
+          npm run test --if-present
 
       - name: Upload artifact for deployment job
         uses: actions/upload-artifact@v4
@@ -52,9 +51,9 @@ jobs:
       - name: Login to Azure
         uses: azure/login@v2
         with:
-          client-id: ${{ secrets.AZUREAPPSERVICE_CLIENTID_69AEE6B399D64D1B8E28B21DE57B1CF1 }}
-          tenant-id: ${{ secrets.AZUREAPPSERVICE_TENANTID_EBD07D2CA4CC46B7B793880C44A51A65 }}
-          subscription-id: ${{ secrets.AZUREAPPSERVICE_SUBSCRIPTIONID_67423B6EFF174159A5F2CD9D5F1CABEF }}
+          client-id: ${{ secrets.AZUREAPPSERVICE_CLIENTID_54B6B3BD0FB24860A3DB5C502EAD94F5 }}
+          tenant-id: ${{ secrets.AZUREAPPSERVICE_TENANTID_753E4EAD3B9840138B12D6C794F479AC }}
+          subscription-id: ${{ secrets.AZUREAPPSERVICE_SUBSCRIPTIONID_FCF84435F434490DA3A2E2A8B20D244F }}
 
       - name: 'Deploy to Azure Web App'
         id: deploy-to-webapp
