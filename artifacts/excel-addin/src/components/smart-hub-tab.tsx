@@ -24,7 +24,6 @@ import {
   parseColorConditionText,
   type AIStyleHint,
 } from "@/lib/excel-actions";
-import { ContextActionsCard } from "@/components/context-actions-card";
 import { QuickFormulaCard } from "@/components/quick-formula-card";
 import { SmartCopyCard } from "@/components/smart-copy-card";
 
@@ -57,7 +56,7 @@ const EXAMPLE_PROMPTS = [
 ];
 
 // sections the user can expand
-type HubSection = "ai" | "quick" | "format" | "copy";
+type HubSection = "ai" | "quick" | "copy";
 
 function ColorSwatch({ color }: { color?: string | null }) {
   if (!color) return null;
@@ -214,10 +213,9 @@ export function SmartHubTab() {
     : null;
 
   const sectionDefs: { id: HubSection; arTitle: string; enTitle: string; icon: React.ReactNode; color: string }[] = [
-    { id: "ai",     arTitle: "الأمر الذكي",              enTitle: "Smart AI Command",   icon: <Sparkles className="w-3.5 h-3.5 text-primary" />,       color: "border-primary/30" },
-    { id: "quick",  arTitle: "بناء المعادلة السريع",     enTitle: "Quick Formula",       icon: <Zap className="w-3.5 h-3.5 text-amber-500" />,          color: "border-amber-200 dark:border-amber-800" },
-    { id: "format", arTitle: "التنسيق البصري",           enTitle: "Visual Formatting",  icon: <Palette className="w-3.5 h-3.5 text-pink-500" />,       color: "border-pink-200 dark:border-pink-800" },
-    { id: "copy",   arTitle: "النسخ الذكي",              enTitle: "Smart Copy",          icon: <Copy className="w-3.5 h-3.5 text-cyan-500" />,          color: "border-cyan-200 dark:border-cyan-800" },
+    { id: "ai",    arTitle: "الأمر الذكي",          enTitle: "Smart AI Command", icon: <Sparkles className="w-3.5 h-3.5 text-primary" />,  color: "border-primary/30" },
+    { id: "quick", arTitle: "بناء المعادلة السريع", enTitle: "Quick Formula",    icon: <Zap className="w-3.5 h-3.5 text-amber-500" />,     color: "border-amber-200 dark:border-amber-800" },
+    { id: "copy",  arTitle: "النسخ الذكي",          enTitle: "Smart Copy",       icon: <Copy className="w-3.5 h-3.5 text-cyan-500" />,     color: "border-cyan-200 dark:border-cyan-800" },
   ];
 
   return (
@@ -458,9 +456,8 @@ export function SmartHubTab() {
                 </>
               )}
 
-              {s.id === "quick"  && <QuickFormulaCard selection={selection} isWatching={isWatching} />}
-              {s.id === "format" && <ContextActionsCard selection={selection} />}
-              {s.id === "copy"   && <SmartCopyCard selection={selection} isWatching={isWatching} />}
+              {s.id === "quick" && <QuickFormulaCard selection={selection} isWatching={isWatching} />}
+              {s.id === "copy"  && <SmartCopyCard selection={selection} isWatching={isWatching} />}
             </div>
           )}
         </div>

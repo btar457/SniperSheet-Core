@@ -420,6 +420,7 @@ export interface CellFormatInfo {
   fontColor: string | null;
   bold: boolean;
   italic: boolean;
+  horizontalAlignment: string | null;
 }
 
 export interface SelectionValuesAndFormat {
@@ -468,7 +469,7 @@ export async function readSelectionValuesAndFormat(): Promise<SelectionValuesAnd
         cells[ri] = [];
         for (let ci = 0; ci < numCols; ci++) {
           const cell = range.getCell(ri, ci);
-          cell.load(["format/fill/color", "format/font/color", "format/font/bold", "format/font/italic"]);
+          cell.load(["format/fill/color", "format/font/color", "format/font/bold", "format/font/italic", "format/horizontalAlignment"]);
           cells[ri][ci] = cell;
         }
       }
@@ -486,6 +487,7 @@ export async function readSelectionValuesAndFormat(): Promise<SelectionValuesAnd
           fontColor: cell.format.font.color ?? null,
           bold: cell.format.font.bold === true,
           italic: cell.format.font.italic === true,
+          horizontalAlignment: cell.format.horizontalAlignment ?? null,
         });
       }
 
@@ -499,6 +501,7 @@ export async function readSelectionValuesAndFormat(): Promise<SelectionValuesAnd
             fontColor: cell.format.font.color ?? null,
             bold: cell.format.font.bold === true,
             italic: cell.format.font.italic === true,
+            horizontalAlignment: cell.format.horizontalAlignment ?? null,
           });
         }
         rowFormats.push(rowFmts);

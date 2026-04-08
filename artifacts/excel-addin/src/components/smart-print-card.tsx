@@ -37,6 +37,21 @@ type MarginKey = keyof typeof MARGINS;
 type FitId = "actual" | "fit-page" | "fit-width" | "custom";
 type Orientation = "portrait" | "landscape";
 
+// Map Excel horizontalAlignment → CSS textAlign
+function toCSSAlign(align: string | null | undefined, value?: string): string {
+  if (!align || align === "General") {
+    // Auto: numbers right, text left
+    const num = parseFloat(value ?? "");
+    return isNaN(num) ? "left" : "right";
+  }
+  const map: Record<string, string> = {
+    Left: "left", Center: "center", Right: "right",
+    Justify: "justify", Fill: "center", Distributed: "center",
+    left: "left", center: "center", right: "right", justify: "justify",
+  };
+  return map[align] ?? "left";
+}
+
 interface Props {
   selection: SelectionInfo | null;
   isWatching: boolean;
@@ -144,7 +159,7 @@ function PagePreview({
                   return (
                     <div
                       key={ci}
-                      className="text-center truncate"
+                      className="truncate"
                       style={{
                         width: colW,
                         fontSize,
@@ -154,6 +169,7 @@ function PagePreview({
                         color: fmt?.fontColor && fmt.fontColor !== "transparent" ? fmt.fontColor : (hasCustomFill ? "#1e293b" : "white"),
                         borderRight: showGrid ? "1px solid rgba(0,0,0,0.15)" : "none",
                         padding: "1px 2px",
+                        textAlign: toCSSAlign(fmt?.horizontalAlignment, h) as any,
                       }}
                     >
                       {h}
@@ -174,6 +190,7 @@ function PagePreview({
                   )}
                   {data.headers.map((_, ci) => {
                     const fmt = data.rowFormats?.[ri]?.[ci];
+                    const cellVal = row[ci] ?? "";
                     const hasCustomFill = fmt?.fillColor && fmt.fillColor !== "transparent" && fmt.fillColor !== "none";
                     const defaultBg = ri % 2 === 0 ? "white" : "#f8fafc";
                     return (
@@ -190,9 +207,10 @@ function PagePreview({
                           borderRight: showGrid ? "1px solid #e2e8f0" : "none",
                           borderBottom: showGrid ? "1px solid #f1f5f9" : "none",
                           padding: "0.5px 2px",
+                          textAlign: toCSSAlign(fmt?.horizontalAlignment, cellVal) as any,
                         }}
                       >
-                        {row[ci] ?? ""}
+                        {cellVal}
                       </div>
                     );
                   })}
@@ -277,7 +295,7 @@ export function SmartPrintCard({ selection, isWatching }: Props) {
     if (fit === "fit-width") fitCSS = `width: 100%;`;
     if (fit === "custom")    fitCSS = `transform: scale(${scale / 100}); transform-origin: top left;`;
 
-    // Build header cells with actual formats
+    // Build header cells with actual formats + alignment
     const headerCells = data ? data.headers.map((h, ci) => {
       const fmt = data.headerFormats?.[ci];
       const hasFill = fmt?.fillColor && fmt.fillColor !== "transparent" && fmt.fillColor !== "none";
@@ -285,22 +303,25 @@ export function SmartPrintCard({ selection, isWatching }: Props) {
       const color = fmt?.fontColor && fmt.fontColor !== "transparent" ? fmt.fontColor : (hasFill ? "#1e293b" : "white");
       const fw    = fmt?.bold !== false ? "700" : "400";
       const fs    = fmt?.italic ? "italic" : "normal";
+      const ta    = toCSSAlign(fmt?.horizontalAlignment, h);
       const border = showGrid ? "border: 1px solid rgba(0,0,0,0.15);" : "";
-      return `<th style="background:${bg};color:${color};font-weight:${fw};font-style:${fs};padding:5px 6px;text-align:center;width:${colWidthPct}%;${border}">${h}</th>`;
+      return `<th style="background:${bg};color:${color};font-weight:${fw};font-style:${fs};padding:5px 6px;text-align:${ta};width:${colWidthPct}%;${border}">${h}</th>`;
     }).join("") : "";
 
-    // Build data rows with actual formats
+    // Build data rows with actual formats + alignment
     const dataRows = data ? data.rows.map((row, ri) => {
       const tds = data.headers.map((_, ci) => {
         const fmt = data.rowFormats?.[ri]?.[ci];
+        const cellVal = row[ci] ?? "";
         const hasFill = fmt?.fillColor && fmt.fillColor !== "transparent" && fmt.fillColor !== "none";
         const defaultBg = ri % 2 === 0 ? "white" : "#f8fafc";
         const bg    = hasFill ? fmt!.fillColor! : defaultBg;
         const color = fmt?.fontColor && fmt.fontColor !== "transparent" ? fmt.fontColor : "#1e293b";
         const fw    = fmt?.bold ? "700" : "400";
         const fs    = fmt?.italic ? "italic" : "normal";
+        const ta    = toCSSAlign(fmt?.horizontalAlignment, cellVal);
         const border = showGrid ? "border: 1px solid #e2e8f0;" : "";
-        return `<td style="background:${bg};color:${color};font-weight:${fw};font-style:${fs};padding:4px 6px;text-align:center;width:${colWidthPct}%;${border}">${row[ci] ?? ""}</td>`;
+        return `<td style="background:${bg};color:${color};font-weight:${fw};font-style:${fs};padding:4px 6px;text-align:${ta};width:${colWidthPct}%;${border}">${cellVal}</td>`;
       }).join("");
       const rowNumTd = showHeaders ? `<td style="color:#94a3b8;font-size:8pt;padding:4px 3px;text-align:center;width:30px;${showGrid ? "border:1px solid #e2e8f0;" : ""}">${ri + 1}</td>` : "";
       return `<tr>${rowNumTd}${tds}</tr>`;
