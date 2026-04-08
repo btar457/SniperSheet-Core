@@ -201,4 +201,119 @@ router.get("/history", async (_req, res): Promise<void> => {
   res.json(GetSmartHistoryResponse.parse(history));
 });
 
+// ─── SMART FORMAT ENDPOINT ────────────────────────────────────────────────────
+
+const FORMAT_SYSTEM_PROMPT = `You are SniperSheet Format Engine — a professional Excel formatting assistant.
+The user will describe how they want their selected Excel cells to look, in Arabic or English.
+You must respond with ONLY a valid JSON object describing the formatting to apply. No markdown, no explanation.
+
+JSON schema (return ALL fields, use null if not applicable):
+{
+  "fillColor": "#hex or null",
+  "fontColor": "#hex or null",
+  "bold": true/false/null,
+  "italic": true/false/null,
+  "underline": true/false/null,
+  "fontSize": number or null,
+  "fontName": "string or null",
+  "horizontalAlignment": "Left|Center|Right|Justify or null",
+  "verticalAlignment": "Top|Center|Bottom or null",
+  "wrapText": true/false/null,
+  "borderPreset": "none|all|outside|thick|dashed or null",
+  "numberFormat": "Excel format code or null",
+  "reasoning": "شرح عربي مختصر",
+  "confidence": 0.95
+}
+
+COLOR NAMES → HEX:
+أخضر/green=#00B050, أحمر/red=#FF0000, أصفر/yellow=#FFD700, أزرق/blue=#0070C0,
+برتقالي/orange=#FF6600, بنفسجي/purple=#7030A0, وردي/pink=#FF99CC,
+رمادي/gray=#C0C0C0, أبيض/white=#FFFFFF, أسود/black=#000000,
+ذهبي/gold=#FFD700, فضي/silver=#C0C0C0, سماوي/cyan=#00B0F0,
+كحلي/navy=#1F3864, بني/brown=#833C00, زيتي/olive=#375623
+
+ALIGNMENT RULES:
+- يمين/right → Right, يسار/left → Left, وسط/center → Center
+- ضبط/justify → Justify
+
+NUMBER FORMAT EXAMPLES:
+- عملة/currency/ريال → "#,##0.00"
+- نسبة/percent/% → "0.00%"
+- تاريخ/date → "DD/MM/YYYY"
+- وقت/time → "HH:MM:SS"
+- رقم صحيح/integer → "#,##0"
+
+FONT SIZE: كبير/large=14, صغير/small=9, عادي/normal=11, ضخم/huge=18, صغير جداً/tiny=8
+
+Respond with ONLY the JSON — nothing else.`;
+
+router.post("/format", async (req, res): Promise<void> => {
+  const { description, cellRef } = req.body as { description: string; cellRef?: string };
+
+  if (!description?.trim()) {
+    res.status(400).json({ error: "description required" });
+    return;
+  }
+
+  const userMsg = [
+    `Formatting request: ${description}`,
+    cellRef ? `Selection: ${cellRef}` : "",
+  ].filter(Boolean).join("\n");
+
+  try {
+    let entry: any = null;
+
+    for (const model of GROQ_MODELS) {
+      try {
+        const completion = await groq.chat.completions.create({
+          model,
+          max_tokens: 1024,
+          temperature: 0.1,
+          messages: [
+            { role: "system", content: FORMAT_SYSTEM_PROMPT },
+            { role: "user",   content: userMsg },
+          ],
+        });
+        const raw = completion.choices[0]?.message?.content ?? "";
+        if (!raw) continue;
+
+        const cleaned = raw
+          .replace(/^```json\s*/i, "").replace(/^```\s*/i, "").replace(/```\s*$/, "")
+          .replace(/^[^{]*/s, "").replace(/}[^}]*$/s, "}").trim();
+
+        entry = JSON.parse(cleaned);
+        req.log.info({ description, model }, "Smart format complete");
+        break;
+      } catch {
+        continue;
+      }
+    }
+
+    if (!entry) {
+      res.status(503).json({ error: "AI format service unavailable, try again" });
+      return;
+    }
+
+    res.json({
+      fillColor:            entry.fillColor            ?? null,
+      fontColor:            entry.fontColor            ?? null,
+      bold:                 entry.bold                 ?? null,
+      italic:               entry.italic               ?? null,
+      underline:            entry.underline            ?? null,
+      fontSize:             entry.fontSize             ?? null,
+      fontName:             entry.fontName             ?? null,
+      horizontalAlignment:  entry.horizontalAlignment  ?? null,
+      verticalAlignment:    entry.verticalAlignment    ?? null,
+      wrapText:             entry.wrapText             ?? null,
+      borderPreset:         entry.borderPreset         ?? null,
+      numberFormat:         entry.numberFormat         ?? null,
+      reasoning:            entry.reasoning            ?? "",
+      confidence:           entry.confidence           ?? 0.9,
+    });
+  } catch (err) {
+    req.log.error({ err }, "Smart format error");
+    res.status(500).json({ error: "Internal error" });
+  }
+});
+
 export default router;
