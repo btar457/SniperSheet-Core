@@ -19,14 +19,14 @@ const C = {
   dark:    "#06111F",
   accent:  "#2B7FD4",
   green:   "#27AE60",
-  red:     "#E74C3C",
+  red:     "#C0392B",
 };
 
 const doc = new PDFDocument({
   size: "A4",
   margins: { top: 0, bottom: 0, left: 0, right: 0 },
   info: {
-    Title:   "SniperSheet – Professional Excel AI Add-in",
+    Title:   "SniperSheet - Professional Excel AI Add-in",
     Author:  "Mustafa Alsahlany",
     Subject: "Product Overview & Feature Guide",
     Keywords:"Excel, AI, Add-in, Formula, SniperSheet",
@@ -37,9 +37,9 @@ doc.pipe(fs.createWriteStream(OUTPUT));
 
 const W  = doc.page.width;   // 595.28
 const H  = doc.page.height;  // 841.89
-const ML = 48;               // margin left
-const MR = W - 48;           // margin right
-const TW = MR - ML;          // text width
+const ML = 48;
+const MR = W - 48;
+const TW = MR - ML;
 
 // ─────────────────────────────────────────────────────────────────────────────
 // HELPERS
@@ -51,62 +51,68 @@ function hLine(y, color = C.navyLt, opacity = 1) {
   doc.save().strokeColor(color).opacity(opacity).lineWidth(0.5)
      .moveTo(ML, y).lineTo(MR, y).stroke().restore();
 }
-function tag(text, x, y, bg = C.gold, fg = C.dark, size = 8) {
-  const pad = 6;
+
+// Colored badge — uses only Helvetica-safe text
+function badge(text, x, y, bg = C.gold, fg = C.dark, size = 7.5) {
   doc.save().fontSize(size).font("Helvetica-Bold");
-  const tw = doc.widthOfString(text) + pad * 2;
-  doc.roundedRect(x, y - 2, tw, 16, 3).fill(bg);
-  doc.fillColor(fg).text(text, x + pad, y + 1, { lineBreak: false });
+  const tw = doc.widthOfString(text);
+  const pad = 5;
+  const bw = tw + pad * 2;
+  const bh = size + 6;
+  doc.roundedRect(x, y, bw, bh, 3).fill(bg);
+  doc.fillColor(fg).text(text, x + pad, y + 3, { lineBreak: false });
   doc.restore();
-  return tw + 6;
+  return bw + 4;
 }
-function bullet(text, x, y, width, color = C.gold) {
-  doc.save();
-  doc.circle(x + 6, y + 5.5, 3).fill(color);
-  doc.fillColor(C.white).fontSize(9.5).font("Helvetica")
-     .text(text, x + 16, y, { width: width - 20, lineBreak: true });
-  const h = doc.heightOfString(text, { width: width - 20 });
+
+// Circular icon badge with 2-3 letter abbreviation
+function iconBadge(letters, x, y, r = 18, bg = C.gold, fg = C.dark) {
+  doc.save().circle(x + r, y + r, r).fill(bg);
+  const sz = letters.length > 2 ? 7 : 9;
+  const tw = doc.fontSize(sz).font("Helvetica-Bold").widthOfString(letters);
+  doc.fillColor(fg).text(letters, x + r - tw / 2, y + r - sz / 2 + 1, { lineBreak: false });
   doc.restore();
-  return Math.max(h, 12) + 4;
 }
+
 function sectionHeader(title, subtitle, y) {
-  rect(0, y, W, 56, C.navyMid);
-  const bar = 4;
-  rect(ML - bar, y + 12, bar, 32, C.gold, 2);
-  doc.fillColor(C.gold).fontSize(16).font("Helvetica-Bold")
-     .text(title, ML + 4, y + 13, { lineBreak: false });
+  rect(0, y, W, 52, C.navyMid);
+  rect(ML - 4, y + 10, 4, 32, C.gold, 2);
+  doc.fillColor(C.gold).fontSize(15).font("Helvetica-Bold")
+     .text(title, ML + 6, y + 12, { lineBreak: false, width: TW - 10 });
   if (subtitle) {
-    doc.fillColor(C.slate).fontSize(9).font("Helvetica")
-       .text(subtitle, ML + 4, y + 34, { lineBreak: false });
+    doc.fillColor(C.slate).fontSize(8.5).font("Helvetica")
+       .text(subtitle, ML + 6, y + 32, { lineBreak: false, width: TW - 10 });
   }
-  return y + 56 + 10;
+  return y + 52 + 10;
 }
-function featureCard(x, y, w, h, icon, title, body) {
+
+function featureCard(x, y, w, h, abbr, abbrBg, title, body) {
   rect(x, y, w, h, C.navyLt, 8);
-  doc.save();
   rect(x, y, w, 4, C.gold, 0);
-  doc.fillColor(C.gold).fontSize(18).font("Helvetica-Bold")
-     .text(icon, x + 12, y + 14, { lineBreak: false });
-  doc.fillColor(C.white).fontSize(10).font("Helvetica-Bold")
-     .text(title, x + 12, y + 38, { width: w - 24, lineBreak: false });
-  doc.fillColor(C.slate).fontSize(8.5).font("Helvetica")
-     .text(body, x + 12, y + 54, { width: w - 24 });
-  doc.restore();
+  iconBadge(abbr, x + 10, y + 12, 15, abbrBg, C.dark);
+  doc.fillColor(C.white).fontSize(9.5).font("Helvetica-Bold")
+     .text(title, x + 44, y + 17, { width: w - 54, lineBreak: false });
+  doc.fillColor(C.slate).fontSize(8).font("Helvetica")
+     .text(body, x + 10, y + 45, { width: w - 20, height: h - 55, ellipsis: true });
 }
-function tableRow(cols, y, widths, isHeader = false) {
-  const bg = isHeader ? C.navyLt : "none";
-  let x = ML;
+
+function tableRowDraw(cols, widths, y, isHeader) {
   const rh = isHeader ? 22 : 18;
   if (isHeader) rect(ML, y, TW, rh, C.navyLt, 4);
+  let x = ML;
   cols.forEach((col, i) => {
     doc.fillColor(isHeader ? C.gold : C.white)
-       .fontSize(isHeader ? 8.5 : 8)
+       .fontSize(isHeader ? 8 : 7.5)
        .font(isHeader ? "Helvetica-Bold" : "Helvetica")
-       .text(col, x + 6, y + (isHeader ? 7 : 5), { width: widths[i] - 10, lineBreak: false });
+       .text(col, x + 5, y + (isHeader ? 7 : 5), {
+         width: widths[i] - 10,
+         lineBreak: false,
+         ellipsis: true,
+       });
     x += widths[i];
   });
   if (!isHeader) {
-    doc.save().strokeColor(C.navyLt).opacity(0.6).lineWidth(0.3)
+    doc.save().strokeColor(C.navyLt).opacity(0.5).lineWidth(0.3)
        .moveTo(ML, y + rh).lineTo(MR, y + rh).stroke().restore();
   }
   return rh;
@@ -117,173 +123,215 @@ function tableRow(cols, y, widths, isHeader = false) {
 // ─────────────────────────────────────────────────────────────────────────────
 rect(0, 0, W, H, C.navy);
 
-// decorative circles
-doc.save().opacity(0.06).circle(W - 40, 120, 160).fill(C.accent);
-doc.circle(60, H - 60, 200).fill(C.gold).restore();
-doc.save().opacity(0.04).circle(W / 2, H / 2, 280).fill(C.white).restore();
+// Decorative circles (pure geometric — no emoji)
+doc.save().opacity(0.07).circle(W - 50, 100, 170).fill(C.accent).restore();
+doc.save().opacity(0.05).circle(50, H - 80, 180).fill(C.gold).restore();
+doc.save().opacity(0.03).circle(W / 2, H / 2, 260).fill(C.white).restore();
 
-// top stripe
+// Top gold stripe
 rect(0, 0, W, 6, C.gold);
 
-// LOGO area
-rect(ML, 52, 56, 56, C.gold, 10);
-doc.fillColor(C.dark).fontSize(28).font("Helvetica-Bold")
-   .text("S", ML + 14, 64, { lineBreak: false });
-doc.fillColor(C.navy).fontSize(10).font("Helvetica-Bold")
+// Logo block
+rect(ML, 50, 58, 58, C.gold, 10);
+doc.fillColor(C.dark).fontSize(30).font("Helvetica-Bold")
+   .text("S", ML + 13, 61, { lineBreak: false });
+doc.fillColor(C.navyMid).fontSize(9).font("Helvetica-Bold")
    .text("SHEET", ML + 28, 83, { lineBreak: false });
 
 doc.fillColor(C.white).fontSize(22).font("Helvetica-Bold")
-   .text("SniperSheet", ML + 68, 58, { lineBreak: false });
+   .text("SniperSheet", ML + 72, 56, { lineBreak: false });
 doc.fillColor(C.gold).fontSize(10).font("Helvetica")
-   .text("AI-Powered Excel Add-in", ML + 68, 85, { lineBreak: false });
+   .text("AI-Powered Excel Add-in", ML + 72, 82, { lineBreak: false });
 
-hLine(128, C.navyLt, 1);
+hLine(126, C.navyLt, 1);
 
-// hero headline
-doc.fillColor(C.white).fontSize(38).font("Helvetica-Bold")
-   .text("Excel, Now Smarter.", ML, 165, { width: TW * 0.7 });
+// Hero headline
+doc.fillColor(C.white).fontSize(36).font("Helvetica-Bold")
+   .text("Excel, Now Smarter.", ML, 158, { width: TW * 0.72, lineBreak: false });
 
-doc.fillColor(C.gold).fontSize(18).font("Helvetica-Bold")
-   .text("No Formulas. No Training.", ML, 255, { lineBreak: false });
+doc.fillColor(C.gold).fontSize(16).font("Helvetica-Bold")
+   .text("No Formulas. No Training.", ML, 210, { lineBreak: false });
 
-doc.fillColor(C.slate).fontSize(12).font("Helvetica")
+doc.fillColor(C.slate).fontSize(10.5).font("Helvetica")
    .text(
-     "SniperSheet brings the power of Artificial Intelligence directly\ninto Microsoft Excel — so anyone can work like a professional,\nfrom day one.",
-     ML, 290, { width: TW * 0.68 }
+     "SniperSheet brings Artificial Intelligence directly into Microsoft Excel.\nAnyone can work like a professional — from day one.",
+     ML, 242, { width: TW * 0.70 }
    );
 
-// key badges row
-const badges = ["🤖  AI-Powered", "⚡  1-3 sec", "🌐  AR | EN", "🖱  Mouse-First", "🔒  Secure"];
+// Key stat badges (text only — no emoji)
+const stats = ["AI-Powered", "1-3 sec Response", "Arabic + English", "Mouse-First", "Secure API"];
 let bx = ML;
-badges.forEach(b => { bx += tag(b, bx, 385) + 4; });
+stats.forEach(s => { bx += badge(s, bx, 298, C.gold, C.dark, 7.5); });
 
-// big visual panel
-rect(ML, 420, TW, 280, C.navyLt, 12);
-rect(ML, 420, TW, 4, C.gold, 0);
+// Mock task-pane panel
+const panelY = 330;
+const panelH = 320;
+rect(ML, panelY, TW, panelH, C.navyLt, 12);
+rect(ML, panelY, TW, 4, C.gold, 0);
 
-// mock task-pane inside the panel
-const px = ML + 20, py = 440, pw = TW - 40, ph = 240;
-rect(px, py, pw, ph, C.navy, 8);
-rect(px, py, pw, 30, C.navyMid, 0);
-doc.fillColor(C.gold).fontSize(9).font("Helvetica-Bold")
-   .text("SniperSheet  |  Smart Hub", px + 10, py + 10, { lineBreak: false });
-doc.fillColor(C.slate).fontSize(7).font("Helvetica")
-   .text("AR | EN", px + pw - 40, py + 11, { lineBreak: false });
-
-rect(px + 10, py + 44, pw - 20, 20, C.navyLt, 4);
-doc.fillColor(C.slate).fontSize(7.5).font("Helvetica")
-   .text("Selected: B2:D15  (42 cells)", px + 16, py + 51, { lineBreak: false });
-
-rect(px + 10, py + 76, pw - 20, 30, C.navyMid, 4);
-doc.fillColor(C.white).fontSize(8).font("Helvetica")
-   .text("\"Highlight sales below 5000 in red, top 10 in green\"", px + 16, py + 85, { width: pw - 36 });
-
-rect(px + pw - 96, py + 118, 80, 20, C.gold, 4);
-doc.fillColor(C.dark).fontSize(8).font("Helvetica-Bold")
-   .text("Analyze →", px + pw - 84, py + 124, { lineBreak: false });
-
-rect(px + 10, py + 152, pw - 20, 42, C.navyLt, 4);
-doc.fillColor(C.green).fontSize(7.5).font("Helvetica-Bold")
-   .text("✓  Conditional formatting applied — 42 cells updated", px + 16, py + 160, { width: pw - 36 });
-doc.fillColor(C.slate).fontSize(7).font("Helvetica")
-   .text("Cells below 5,000 → red fill  |  Top 10 values → green fill", px + 16, py + 176, { width: pw - 36 });
-
-// bottom cover info
-rect(0, H - 56, W, 56, C.dark);
-hLine(H - 56, C.gold, 0.5);
-doc.fillColor(C.slate).fontSize(8).font("Helvetica")
-   .text("© 2025–2026 Mustafa Alsahlany  ·  All Rights Reserved", ML, H - 36, { lineBreak: false });
+// label
 doc.fillColor(C.gold).fontSize(8).font("Helvetica-Bold")
-   .text("node-runner-mustafaalshlany.replit.app", MR - 200, H - 36, { lineBreak: false });
+   .text("LIVE PREVIEW", ML + 12, panelY + 14, { lineBreak: false });
+
+// inner mock
+const px = ML + 18, py = panelY + 36, pw = TW - 36;
+const innerH = panelH - 52;
+rect(px, py, pw, innerH, C.navy, 8);
+
+// top bar
+rect(px, py, pw, 28, C.navyMid, 0);
+doc.fillColor(C.gold).fontSize(8.5).font("Helvetica-Bold")
+   .text("SniperSheet  |  Smart Hub", px + 10, py + 9, { lineBreak: false });
+doc.fillColor(C.slate).fontSize(7).font("Helvetica")
+   .text("AR | EN", px + pw - 36, py + 10, { lineBreak: false });
+
+// selection info
+rect(px + 10, py + 40, pw - 20, 20, C.navyLt, 4);
+doc.fillColor(C.slate).fontSize(7.5).font("Helvetica")
+   .text("Selection: B2:D15  (42 cells detected)", px + 14, py + 47, { lineBreak: false, width: pw - 30 });
+
+// command input
+rect(px + 10, py + 72, pw - 20, 28, C.navyMid, 4);
+doc.fillColor(C.white).fontSize(8).font("Helvetica")
+   .text("\"Highlight sales below 5000 in red, top 10 in green\"",
+         px + 14, py + 82, { width: pw - 32, lineBreak: false, ellipsis: true });
+
+// analyze button
+rect(px + pw - 94, py + 112, 80, 20, C.gold, 5);
+doc.fillColor(C.dark).fontSize(8).font("Helvetica-Bold")
+   .text("Analyze  >>", px + pw - 82, py + 118, { lineBreak: false });
+
+// result
+rect(px + 10, py + 146, pw - 20, 44, C.navyLt, 4);
+doc.fillColor(C.green).fontSize(8).font("Helvetica-Bold")
+   .text("Success  -  Conditional formatting applied", px + 14, py + 154, { width: pw - 30, lineBreak: false, ellipsis: true });
+doc.fillColor(C.slate).fontSize(7).font("Helvetica")
+   .text("42 cells updated  |  Below 5,000 = red  |  Top 10 = green",
+         px + 14, py + 170, { width: pw - 30, lineBreak: false, ellipsis: true });
+
+// Bottom strip
+rect(0, H - 50, W, 50, C.dark);
+hLine(H - 50, C.gold, 0.5);
+doc.fillColor(C.slate).fontSize(7.5).font("Helvetica")
+   .text("(c) 2025-2026 Mustafa Alsahlany  |  All Rights Reserved", ML, H - 26, { lineBreak: false });
+doc.fillColor(C.gold).fontSize(7.5).font("Helvetica-Bold")
+   .text("node-runner-mustafaalshlany.replit.app", MR - 218, H - 26, { lineBreak: false });
 
 // ─────────────────────────────────────────────────────────────────────────────
-// PAGE 2 — WHAT IS SNIPERSHHET + WORKFLOW
+// PAGE 2 — WHAT IS IT + WORKFLOW
 // ─────────────────────────────────────────────────────────────────────────────
 doc.addPage({ size: "A4", margins: { top: 0, bottom: 0, left: 0, right: 0 } });
 rect(0, 0, W, H, C.navy);
 rect(0, 0, W, 6, C.gold);
 
-let cy = 30;
+let cy = 28;
+cy = sectionHeader("What Is SniperSheet?", "Purpose, Vision & How It Works", cy);
 
-// About
-cy = sectionHeader("What Is SniperSheet?", "Purpose & Vision", cy);
-
-doc.fillColor(C.white).fontSize(10.5).font("Helvetica")
+doc.fillColor(C.white).fontSize(10).font("Helvetica")
    .text(
-     "SniperSheet is a professional Excel Add-in that embeds a full AI engine inside Microsoft Excel. You select cells, describe what you want in plain language — and the AI builds the formula, applies formatting, or analyzes data for you — instantly.",
+     "SniperSheet is a professional Excel Add-in that embeds a full AI engine inside Microsoft Excel. Select cells, describe what you want in plain language, and the AI builds formulas, applies formatting, or analyzes data instantly — no expertise required.",
      ML, cy, { width: TW }
    );
-cy += 52;
+cy += 50;
 
+// Pull quote
+rect(ML, cy, TW, 36, C.navyLt, 8);
+rect(ML, cy, 4, 36, C.gold, 0);
 doc.fillColor(C.gold).fontSize(11).font("Helvetica-Bold")
-   .text("\u201CExcel was already powerful. SniperSheet makes it human.\u201D", ML + 20, cy, { width: TW - 40 });
-cy += 36;
+   .text('"Excel was already powerful. SniperSheet makes it human."', ML + 14, cy + 10, { width: TW - 24, lineBreak: false, ellipsis: true });
+cy += 50;
 
 hLine(cy, C.navyLt, 0.8);
-cy += 16;
+cy += 14;
 
 // 3-step workflow
 doc.fillColor(C.gold).fontSize(13).font("Helvetica-Bold")
-   .text("How It Works — 3 Simple Steps", ML, cy);
-cy += 26;
+   .text("How It Works  -  3 Simple Steps", ML, cy);
+cy += 22;
 
 const steps = [
-  { n: "1", icon: "🖱", title: "Select", body: "Click and drag to select any cells in your spreadsheet. SniperSheet reads your selection automatically." },
-  { n: "2", icon: "💬", title: "Describe", body: "Type what you want in plain Arabic or English. No formula knowledge required whatsoever." },
-  { n: "3", icon: "⚡", title: "Done", body: "Click Analyze. The AI processes your request in 1–3 seconds and applies the result directly to Excel." },
+  { abbr: "1", title: "SELECT", body: "Click and drag in Excel to select any range. SniperSheet reads your selection address, size, and data types automatically." },
+  { abbr: "2", title: "DESCRIBE", body: "Type your goal in plain Arabic or English. No formula syntax. No training. Just say what you want done." },
+  { abbr: "3", title: "DONE", body: "Click Analyze. The AI responds in 1-3 seconds and applies the result — formula or formatting — directly to your sheet." },
 ];
 
 const sw = (TW - 20) / 3;
 steps.forEach((s, i) => {
   const sx = ML + i * (sw + 10);
-  rect(sx, cy, sw, 110, C.navyLt, 8);
+  rect(sx, cy, sw, 106, C.navyLt, 8);
   rect(sx, cy, sw, 4, C.gold, 0);
-  rect(sx + sw / 2 - 18, cy + 14, 36, 36, C.gold, 18);
-  doc.fillColor(C.dark).fontSize(18).font("Helvetica-Bold")
-     .text(s.n, sx + sw / 2 - 6, cy + 22, { lineBreak: false });
-  doc.fillColor(C.white).fontSize(10.5).font("Helvetica-Bold")
-     .text(s.icon + "  " + s.title, sx + 10, cy + 58, { width: sw - 20, lineBreak: false });
-  doc.fillColor(C.slate).fontSize(8.5).font("Helvetica")
-     .text(s.body, sx + 10, cy + 76, { width: sw - 20 });
+  // number badge
+  doc.save().circle(sx + sw / 2, cy + 26, 20).fill(C.gold).restore();
+  doc.fillColor(C.dark).fontSize(16).font("Helvetica-Bold")
+     .text(s.abbr, sx + sw / 2 - 5, cy + 18, { lineBreak: false });
+  doc.fillColor(C.white).fontSize(9.5).font("Helvetica-Bold")
+     .text(s.title, sx + 10, cy + 56, { width: sw - 20, align: "center" });
+  doc.fillColor(C.slate).fontSize(7.5).font("Helvetica")
+     .text(s.body, sx + 10, cy + 74, { width: sw - 20, height: 28, ellipsis: true });
 });
-cy += 126;
+cy += 122;
 
 hLine(cy, C.navyLt, 0.8);
-cy += 16;
+cy += 14;
 
-// Example commands block
+// Example commands
 doc.fillColor(C.gold).fontSize(13).font("Helvetica-Bold")
    .text("Real Command Examples", ML, cy);
+cy += 20;
+
+const w1 = 30, w2 = 210, w3 = TW - w1 - w2;
+tableRowDraw(["LG", "YOUR COMMAND", "RESULT / ACTION"], [w1, w2, w3], cy, true);
 cy += 22;
 
 const examples = [
-  { lang: "EN", cmd: "\"Calculate the average salary per department\"",         result: "=AVERAGEIF(B:B, E2, C:C)  →  applied to E2:E20" },
-  { lang: "EN", cmd: "\"Highlight all values below 50 in orange\"",            result: "Conditional formatting rule applied — 42 cells updated" },
-  { lang: "EN", cmd: "\"Find employee name from ID using lookup table\"",       result: "=VLOOKUP(A2, Sheet2!A:B, 2, 0)  →  inserted" },
-  { lang: "AR", cmd: "\"احسب إجمالي المبيعات لكل منطقة\"",                    result: "=SUMIF(A:A, D2, B:B)  →  applied automatically" },
-  { lang: "AR", cmd: "\"لون الخلايا الأقل من 100 باللون الأحمر\"",             result: "Conditional color rule  →  LessThan 100 → red fill" },
+  ["EN", '"Calculate average salary per department"',      "=AVERAGEIF(B:B,E2,C:C) applied to range"],
+  ["EN", '"Highlight all values below 50 in orange"',      "Conditional rule: LessThan 50 -> orange fill"],
+  ["EN", '"Find employee name from ID in lookup table"',   "=VLOOKUP(A2,Sheet2!A:B,2,0) inserted"],
+  ["AR", '"Ihtasib Ijmali Al-Mabee3at Li-Kul Mintaqa"',   "=SUMIF(A:A,D2,B:B) applied automatically"],
+  ["AR", '"Lawn Al-Khana Ya\'l Aqal Min 100 Bil-Ahmar"',  "Conditional rule: LessThan 100 -> red fill"],
 ];
-
-const ew1 = 34, ew2 = 200, ew3 = TW - ew1 - ew2 - 12;
-tableRow(["LANG", "YOUR COMMAND", "RESULT"], cy, [ew1, ew2, ew3], true);
-cy += 22;
-examples.forEach(e => {
-  rect(ML, cy, TW, 18, "none", 0);
-  const langCol = e.lang === "AR" ? C.gold : C.accent;
-  tag(e.lang, ML + 6, cy + 2, langCol, C.dark, 7);
+examples.forEach((e, ri) => {
+  if (ri % 2 === 0) rect(ML, cy, TW, 18, "#091829", 0);
+  const langBg = e[0] === "AR" ? C.gold : C.accent;
+  badge(e[0], ML + 4, cy + 3, langBg, C.dark, 7);
   doc.fillColor(C.white).fontSize(7.5).font("Helvetica-Bold")
-     .text(e.cmd, ML + ew1 + 4, cy + 4, { width: ew2 - 10, lineBreak: false });
+     .text(e[1], ML + w1 + 4, cy + 5, { width: w2 - 10, lineBreak: false, ellipsis: true });
   doc.fillColor(C.slate).fontSize(7.5).font("Helvetica")
-     .text(e.result, ML + ew1 + ew2 + 4, cy + 4, { width: ew3 - 10, lineBreak: false });
-  cy += tableRow([], cy, [], false);
+     .text(e[2], ML + w1 + w2 + 4, cy + 5, { width: w3 - 10, lineBreak: false, ellipsis: true });
+  cy += 18;
+  doc.save().strokeColor(C.navyLt).opacity(0.4).lineWidth(0.3)
+     .moveTo(ML, cy).lineTo(MR, cy).stroke().restore();
 });
-cy += 8;
+cy += 10;
 
-// Bottom bar
+hLine(cy, C.navyLt, 0.8);
+cy += 14;
+
+// Why no expertise needed
+doc.fillColor(C.gold).fontSize(12).font("Helvetica-Bold")
+   .text("Why Anyone Can Use It From Day One", ML, cy);
+cy += 16;
+
+const whys = [
+  "No formula memorization required — just describe your goal in plain words",
+  "Bilingual: understands commands in Arabic and English simultaneously",
+  "Mouse selection is your primary input — Excel stays familiar",
+  "Every action is explained in plain language after it is applied",
+  "Errors are shown with clear guidance — not cryptic formula errors",
+];
+whys.forEach(w => {
+  doc.save().circle(ML + 7, cy + 5, 3).fill(C.gold).restore();
+  doc.fillColor(C.white).fontSize(9).font("Helvetica")
+     .text(w, ML + 18, cy, { width: TW - 20, lineBreak: false, ellipsis: true });
+  cy += 17;
+});
+
+// Footer
 rect(0, H - 36, W, 36, C.dark);
 hLine(H - 36, C.gold, 0.4);
-doc.fillColor(C.slate).fontSize(7.5).font("Helvetica")
-   .text("SniperSheet  ·  © 2025–2026 Mustafa Alsahlany  ·  All Rights Reserved  ·  Page 2", ML, H - 20, { lineBreak: false });
+doc.fillColor(C.slate).fontSize(7).font("Helvetica")
+   .text("SniperSheet  |  (c) 2025-2026 Mustafa Alsahlany  |  All Rights Reserved  |  Page 2 of 6",
+         ML, H - 18, { lineBreak: false });
 
 // ─────────────────────────────────────────────────────────────────────────────
 // PAGE 3 — CORE FEATURES
@@ -292,66 +340,81 @@ doc.addPage({ size: "A4", margins: { top: 0, bottom: 0, left: 0, right: 0 } });
 rect(0, 0, W, H, C.navy);
 rect(0, 0, W, 6, C.gold);
 
-cy = 30;
+cy = 28;
 cy = sectionHeader("Core Features", "Everything SniperSheet can do for you", cy);
 
 const features = [
-  { icon: "🧠", title: "Smart Hub",          body: "Central AI command panel. Select cells, type your goal, get instant results. Zero formula knowledge needed." },
-  { icon: "🔢", title: "Formula Engine",      body: "Converts natural language into precise Excel formulas — SUM, IF, VLOOKUP, INDEX/MATCH, PMT, and 50+ more." },
-  { icon: "🎨", title: "Smart Formatting",    body: "Apply conditional colors, font styles, fills, number formats, and table styling — all from a single sentence." },
-  { icon: "🌐", title: "Bilingual AR | EN",   body: "Full Arabic RTL interface + English. Commands understood in both languages simultaneously. First of its kind." },
-  { icon: "🖱", title: "Mouse-First",         body: "Select cells with your mouse — that IS your input. No cell references to type, no syntax to remember." },
-  { icon: "⚡", title: "1–3 Second Speed",    body: "Powered by Groq's ultra-fast AI inference. Typical response: under 2 seconds from click to applied result." },
-  { icon: "📡", title: "Word Radar",          body: "Local intent detection engine. Recognizes Arabic and English keywords before calling AI — faster for common tasks." },
-  { icon: "🔒", title: "Secure API",          body: "CORS-locked, rate-limited, token-authenticated backend. Your data is never stored after the request completes." },
+  { abbr: "AI",  bg: C.gold,   title: "Smart Hub",
+    body: "Central AI command panel. Select cells, type your goal, click Analyze. Zero formula knowledge needed." },
+  { abbr: "FX",  bg: C.accent, title: "Formula Engine",
+    body: "Converts plain language into precise Excel formulas — SUM, IF, VLOOKUP, INDEX/MATCH, PMT, and 50+ more." },
+  { abbr: "FMT", bg: "#8E44AD", title: "Smart Formatting",
+    body: "Apply conditional colors, font styles, fills, number formats, and table styling from a single sentence." },
+  { abbr: "AR",  bg: C.green,  title: "Bilingual  AR | EN",
+    body: "Full Arabic RTL interface plus English. Commands understood in both languages simultaneously." },
+  { abbr: "M1",  bg: C.gold,   title: "Mouse-First Workflow",
+    body: "Select cells with your mouse — that IS your input. No cell references to type, no syntax to remember." },
+  { abbr: "1s",  bg: C.accent, title: "1 to 3 Second Speed",
+    body: "Powered by Groq ultra-fast AI inference. Typical response: under 2 seconds from click to applied result." },
+  { abbr: "RDR", bg: "#8E44AD", title: "Word Radar Engine",
+    body: "Local keyword detection pre-classifies intent before calling AI. Faster for common tasks, works offline." },
+  { abbr: "SEC", bg: C.red,    title: "Secure API",
+    body: "CORS-locked, rate-limited, token-authenticated. Your data is never stored after the request completes." },
 ];
 
-const fc_w = (TW - 10) / 2;
-const fc_h = 90;
+const fc_cols = 2;
+const fc_w = (TW - 10) / fc_cols;
+const fc_h = 84;
+const fc_gap = 8;
+
 features.forEach((f, i) => {
-  const col = i % 2;
-  const row = Math.floor(i / 2);
+  const col = i % fc_cols;
+  const row = Math.floor(i / fc_cols);
   const fx = ML + col * (fc_w + 10);
-  const fy = cy + row * (fc_h + 10);
-  featureCard(fx, fy, fc_w, fc_h, f.icon, f.title, f.body);
+  const fy = cy + row * (fc_h + fc_gap);
+  featureCard(fx, fy, fc_w, fc_h, f.abbr, f.bg, f.title, f.body);
 });
-cy += Math.ceil(features.length / 2) * (fc_h + 10) + 10;
+cy += Math.ceil(features.length / fc_cols) * (fc_h + fc_gap) + 6;
 
 hLine(cy, C.navyLt, 0.6);
-cy += 14;
+cy += 12;
 
 // Formula categories
 doc.fillColor(C.gold).fontSize(12).font("Helvetica-Bold")
    .text("Supported Formula Categories", ML, cy);
-cy += 20;
+cy += 18;
 
 const cats = [
-  ["Math & Aggregation",   "SUM · AVERAGE · MAX · MIN · COUNT · SUBTOTAL"],
-  ["Logical",              "IF · IFS · AND · OR · NOT · IFERROR · SWITCH"],
-  ["Lookup & Reference",   "VLOOKUP · HLOOKUP · INDEX/MATCH · XLOOKUP · OFFSET"],
-  ["Text Manipulation",    "CONCATENATE · LEFT · RIGHT · MID · TRIM · PROPER · TEXT"],
-  ["Date & Time",          "TODAY · NOW · DATEDIF · NETWORKDAYS · YEAR · MONTH"],
-  ["Statistical",          "COUNTIF · SUMIF · AVERAGEIF · RANK · PERCENTILE · STDEV"],
-  ["Financial",            "PMT · NPV · IRR · FV · PV · RATE"],
-  ["Dynamic / Array",      "FILTER · SORT · UNIQUE · SEQUENCE · XLOOKUP spill ranges"],
+  ["Math & Aggregation",  "SUM  AVERAGE  MAX  MIN  COUNT  SUBTOTAL"],
+  ["Logical",             "IF  IFS  AND  OR  NOT  IFERROR  SWITCH"],
+  ["Lookup & Reference",  "VLOOKUP  HLOOKUP  INDEX/MATCH  XLOOKUP"],
+  ["Text Manipulation",   "CONCAT  LEFT  RIGHT  MID  TRIM  PROPER  TEXT"],
+  ["Date & Time",         "TODAY  NOW  DATEDIF  NETWORKDAYS  YEAR  MONTH"],
+  ["Statistical",         "COUNTIF  SUMIF  AVERAGEIF  RANK  PERCENTILE"],
+  ["Financial",           "PMT  NPV  IRR  FV  PV  RATE"],
+  ["Dynamic Array",       "FILTER  SORT  UNIQUE  SEQUENCE  XLOOKUP spill"],
 ];
 
-const cw1 = 150, cw2 = TW - cw1;
-tableRow(["CATEGORY", "FORMULAS INCLUDED"], cy, [cw1, cw2], true);
+const cw1 = 148, cw2 = TW - cw1;
+tableRowDraw(["CATEGORY", "FORMULAS INCLUDED"], [cw1, cw2], cy, true);
 cy += 22;
-cats.forEach(r => {
+cats.forEach((r, ri) => {
+  if (ri % 2 === 0) rect(ML, cy, TW, 18, "#091829", 0);
   doc.fillColor(C.gold).fontSize(8).font("Helvetica-Bold")
-     .text(r[0], ML + 6, cy + 4, { width: cw1 - 10, lineBreak: false });
+     .text(r[0], ML + 5, cy + 4, { width: cw1 - 8, lineBreak: false });
   doc.fillColor(C.slate).fontSize(7.5).font("Helvetica")
-     .text(r[1], ML + cw1 + 4, cy + 4, { width: cw2 - 10, lineBreak: false });
-  cy += tableRow([], cy, [], false);
+     .text(r[1], ML + cw1 + 4, cy + 4, { width: cw2 - 10, lineBreak: false, ellipsis: true });
+  cy += 18;
+  doc.save().strokeColor(C.navyLt).opacity(0.35).lineWidth(0.3)
+     .moveTo(ML, cy).lineTo(MR, cy).stroke().restore();
 });
 
 // Footer
 rect(0, H - 36, W, 36, C.dark);
 hLine(H - 36, C.gold, 0.4);
-doc.fillColor(C.slate).fontSize(7.5).font("Helvetica")
-   .text("SniperSheet  ·  © 2025–2026 Mustafa Alsahlany  ·  All Rights Reserved  ·  Page 3", ML, H - 20, { lineBreak: false });
+doc.fillColor(C.slate).fontSize(7).font("Helvetica")
+   .text("SniperSheet  |  (c) 2025-2026 Mustafa Alsahlany  |  All Rights Reserved  |  Page 3 of 6",
+         ML, H - 18, { lineBreak: false });
 
 // ─────────────────────────────────────────────────────────────────────────────
 // PAGE 4 — WHO IS IT FOR + COMPARISON + TECH
@@ -360,100 +423,105 @@ doc.addPage({ size: "A4", margins: { top: 0, bottom: 0, left: 0, right: 0 } });
 rect(0, 0, W, H, C.navy);
 rect(0, 0, W, 6, C.gold);
 
-cy = 30;
+cy = 28;
 cy = sectionHeader("Who Is SniperSheet For?", "Built for everyone — no expertise required", cy);
 
 const audiences = [
-  { icon: "🎓", who: "Students",           desc: "Complete Excel assignments, data analysis, and projects without formula knowledge." },
-  { icon: "💼", who: "Business Owners",    desc: "Build financial reports, dashboards, and trackers without hiring consultants." },
-  { icon: "🧾", who: "Accountants",        desc: "Automate repetitive calculations — payroll, tax, reconciliation — instantly." },
-  { icon: "👥", who: "HR Professionals",   desc: "Analyze attendance, payroll, and performance data with simple commands." },
-  { icon: "🏢", who: "Enterprises",        desc: "Standardize Excel operations across teams — no training overhead required." },
-  { icon: "📊", who: "Analysts",           desc: "Generate complex formulas and conditional reports at conversational speed." },
+  { abbr: "STU", bg: C.gold,   who: "Students",          desc: "Complete Excel assignments and data analysis without any formula knowledge." },
+  { abbr: "BIZ", bg: C.accent, who: "Business Owners",   desc: "Build financial reports and dashboards without hiring consultants." },
+  { abbr: "ACC", bg: C.green,  who: "Accountants",       desc: "Automate payroll, tax, and reconciliation calculations instantly." },
+  { abbr: "HR",  bg: "#8E44AD",who: "HR Professionals",  desc: "Analyze attendance, performance, and payroll data with simple commands." },
+  { abbr: "ENT", bg: C.red,    who: "Enterprises",       desc: "Standardize Excel across teams with no training overhead required." },
+  { abbr: "DATA",bg: C.accent, who: "Data Analysts",     desc: "Generate complex formulas and conditional reports at conversational speed." },
 ];
 
 const aw = (TW - 10) / 2;
+const ah = 54;
 audiences.forEach((a, i) => {
-  const col = i % 2;
-  const row = Math.floor(i / 2);
+  const col = i % 2, row = Math.floor(i / 2);
   const ax = ML + col * (aw + 10);
-  const ay = cy + row * 58;
-  rect(ax, ay, aw, 50, C.navyLt, 6);
-  rect(ax, ay, 4, 50, C.gold, 0);
-  doc.fillColor(C.white).fontSize(10).font("Helvetica-Bold")
-     .text(a.icon + "  " + a.who, ax + 14, ay + 8, { width: aw - 24, lineBreak: false });
-  doc.fillColor(C.slate).fontSize(8).font("Helvetica")
-     .text(a.desc, ax + 14, ay + 27, { width: aw - 24 });
+  const ay = cy + row * (ah + 8);
+  rect(ax, ay, aw, ah, C.navyLt, 6);
+  rect(ax, ay, 3, ah, C.gold, 0);
+  iconBadge(a.abbr, ax + 8, ay + 9, 14, a.bg, C.dark);
+  doc.fillColor(C.white).fontSize(9.5).font("Helvetica-Bold")
+     .text(a.who, ax + 44, ay + 10, { width: aw - 54, lineBreak: false });
+  doc.fillColor(C.slate).fontSize(7.5).font("Helvetica")
+     .text(a.desc, ax + 44, ay + 28, { width: aw - 54, height: 20, ellipsis: true });
 });
-cy += Math.ceil(audiences.length / 2) * 58 + 12;
+cy += Math.ceil(audiences.length / 2) * (ah + 8) + 12;
 
 hLine(cy, C.navyLt, 0.7);
-cy += 14;
+cy += 12;
 
 // Comparison table
-doc.fillColor(C.gold).fontSize(13).font("Helvetica-Bold")
-   .text("Traditional Excel vs Excel + SniperSheet", ML, cy);
+doc.fillColor(C.gold).fontSize(12).font("Helvetica-Bold")
+   .text("Traditional Excel  vs.  Excel + SniperSheet", ML, cy);
+cy += 20;
+
+const ct = TW / 2;
+tableRowDraw(["TRADITIONAL EXCEL", "EXCEL + SNIPERSHSET"], [ct, ct], cy, true);
 cy += 22;
 
 const cmp = [
-  ["Traditional Excel",                "Excel + SniperSheet"],
-  ["Must know formula syntax",         "Type in plain Arabic or English"],
-  ["Hours to build complex sheets",    "Minutes — often seconds"],
-  ["English-only tools available",     "Full Arabic RTL + English bilingual"],
-  ["Error-prone manual entry",         "AI validates and applies correctly"],
-  ["Requires training / tutorials",    "Works on first use, zero learning curve"],
-  ["Formatting = many menu clicks",    "One sentence → instant result"],
-  ["Static formulas by hand",          "Smart range-aware formula generation"],
-  ["No context about your data",       "AI reads your selection and adapts"],
+  ["Must know formula syntax",            "Type in plain Arabic or English"],
+  ["Hours to build complex sheets",       "Done in minutes — often seconds"],
+  ["English-only tools available",        "Full Arabic RTL + English bilingual"],
+  ["Error-prone manual entry",            "AI validates and applies correctly"],
+  ["Requires training and tutorials",     "Works on first use, zero learning curve"],
+  ["Formatting needs many menu clicks",   "One sentence delivers instant result"],
+  ["Static formulas typed by hand",       "Smart range-aware formula generation"],
+  ["No context about your data",          "AI reads selection and adapts to it"],
 ];
-
-const ct1 = TW / 2, ct2 = TW / 2;
-tableRow(cmp[0], cy, [ct1, ct2], true);
-cy += 22;
-cmp.slice(1).forEach((r, ri) => {
+cmp.forEach((r, ri) => {
   if (ri % 2 === 0) rect(ML, cy, TW, 18, "#091829", 0);
-  doc.fillColor("#E57373").fontSize(8).font("Helvetica")
-     .text("✗  " + r[0], ML + 6, cy + 4, { width: ct1 - 12, lineBreak: false });
-  doc.fillColor(C.green).fontSize(8).font("Helvetica")
-     .text("✓  " + r[1], ML + ct1 + 4, cy + 4, { width: ct2 - 10, lineBreak: false });
-  cy += tableRow([], cy, [], false);
+  doc.fillColor("#E57373").fontSize(7.5).font("Helvetica")
+     .text("x  " + r[0], ML + 5, cy + 4, { width: ct - 10, lineBreak: false, ellipsis: true });
+  doc.fillColor(C.green).fontSize(7.5).font("Helvetica")
+     .text("v  " + r[1], ML + ct + 4, cy + 4, { width: ct - 10, lineBreak: false, ellipsis: true });
+  cy += 18;
+  doc.save().strokeColor(C.navyLt).opacity(0.35).lineWidth(0.3)
+     .moveTo(ML, cy).lineTo(MR, cy).stroke().restore();
 });
 cy += 12;
 
 hLine(cy, C.navyLt, 0.7);
-cy += 14;
+cy += 12;
 
 // Tech specs
-doc.fillColor(C.gold).fontSize(13).font("Helvetica-Bold")
+doc.fillColor(C.gold).fontSize(12).font("Helvetica-Bold")
    .text("Technical Highlights", ML, cy);
-cy += 20;
+cy += 18;
 
 const specs = [
-  ["AI Engine",        "Groq API · llama-3.3-70b-versatile (ultra-fast inference)"],
-  ["Response Time",    "Average 1–3 seconds from click to applied result in Excel"],
+  ["AI Engine",        "Groq API  -  llama-3.3-70b-versatile (ultra-fast inference)"],
+  ["Response Time",    "Average 1 to 3 seconds from click to applied result in Excel"],
   ["Platform",         "Microsoft Excel Desktop + Excel Online (Office Add-in API)"],
-  ["Interface",        "400px Task Pane · React + TypeScript · Tailwind CSS"],
-  ["Backend",          "Node.js · Express · Secure cloud hosting"],
-  ["Languages",        "Arabic (RTL, full UI + AI) · English (LTR, full UI + AI)"],
-  ["Security",         "CORS-locked · Rate-limited · App token · HTTPS only"],
-  ["Offline Ops",      "Basic formatting detection via local Word Radar (no internet)"],
+  ["Interface",        "400px Task Pane  -  React + TypeScript  -  Tailwind CSS"],
+  ["Backend",          "Node.js  -  Express  -  Secure cloud hosting"],
+  ["Languages",        "Arabic (RTL, full UI + AI)  -  English (full UI + AI)"],
+  ["Security",         "CORS-locked  -  Rate-limited  -  App token  -  HTTPS only"],
+  ["Offline Mode",     "Basic formatting detection via local Word Radar engine"],
 ];
 
-const sw1 = 120, sw2 = TW - sw1;
-specs.forEach(s => {
-  doc.fillColor(C.gold).fontSize(8.5).font("Helvetica-Bold")
-     .text(s[0], ML, cy + 3, { width: sw1, lineBreak: false });
-  doc.fillColor(C.white).fontSize(8.5).font("Helvetica")
-     .text(s[1], ML + sw1, cy + 3, { width: sw2, lineBreak: false });
-  hLine(cy + 17, C.navyLt, 0.4);
+const sw1 = 118, sw2 = TW - sw1;
+specs.forEach((s, i) => {
+  if (i % 2 === 0) rect(ML, cy, TW, 18, "#091829", 0);
+  doc.fillColor(C.gold).fontSize(8).font("Helvetica-Bold")
+     .text(s[0], ML + 5, cy + 4, { width: sw1 - 8, lineBreak: false });
+  doc.fillColor(C.white).fontSize(7.5).font("Helvetica")
+     .text(s[1], ML + sw1 + 4, cy + 4, { width: sw2 - 10, lineBreak: false, ellipsis: true });
   cy += 18;
+  doc.save().strokeColor(C.navyLt).opacity(0.35).lineWidth(0.3)
+     .moveTo(ML, cy).lineTo(MR, cy).stroke().restore();
 });
 
 // Footer
 rect(0, H - 36, W, 36, C.dark);
 hLine(H - 36, C.gold, 0.4);
-doc.fillColor(C.slate).fontSize(7.5).font("Helvetica")
-   .text("SniperSheet  ·  © 2025–2026 Mustafa Alsahlany  ·  All Rights Reserved  ·  Page 4", ML, H - 20, { lineBreak: false });
+doc.fillColor(C.slate).fontSize(7).font("Helvetica")
+   .text("SniperSheet  |  (c) 2025-2026 Mustafa Alsahlany  |  All Rights Reserved  |  Page 4 of 6",
+         ML, H - 18, { lineBreak: false });
 
 // ─────────────────────────────────────────────────────────────────────────────
 // PAGE 5 — AI ENGINE DEEP DIVE
@@ -462,102 +530,115 @@ doc.addPage({ size: "A4", margins: { top: 0, bottom: 0, left: 0, right: 0 } });
 rect(0, 0, W, H, C.navy);
 rect(0, 0, W, 6, C.gold);
 
-cy = 30;
-cy = sectionHeader("AI Engine — Deep Dive", "How SniperSheet's intelligence works", cy);
+cy = 28;
+cy = sectionHeader("AI Engine  -  Deep Dive", "How SniperSheet intelligence works under the hood", cy);
 
-// AI flow
 doc.fillColor(C.gold).fontSize(12).font("Helvetica-Bold")
    .text("AI Request Pipeline", ML, cy);
-cy += 20;
+cy += 18;
 
 const pipeline = [
-  { step: "01", title: "Mouse Selection",    desc: "User selects a range. SniperSheet captures address, size, sample values, and data types." },
-  { step: "02", title: "Word Radar Scan",    desc: "Local keyword engine pre-classifies intent (formatting / formula / analysis) — no API call needed for simple tasks." },
-  { step: "03", title: "Context Assembly",   desc: "AI receives: user prompt + selection metadata + data samples + detected language (AR/EN)." },
-  { step: "04", title: "Groq Inference",     desc: "llama-3.3-70b processes the context and returns a structured JSON: formula, type, styleHints, explanation." },
-  { step: "05", title: "Formula Insertion",  desc: "Formula is built into a range matrix and inserted via Office.js — correct for every cell in the selection." },
-  { step: "06", title: "Style Application",  desc: "Style hints (colors, bold, conditional rules) are applied via Excel's formatting API automatically." },
+  { n: "01", title: "Mouse Selection",   desc: "User selects a range. Add-in captures: address, size, sample values, data types." },
+  { n: "02", title: "Word Radar Scan",   desc: "Local keyword engine pre-classifies intent (formatting / formula / analysis) — no API call needed for simple tasks." },
+  { n: "03", title: "Context Assembly",  desc: "AI receives: user prompt + selection metadata + data samples + detected language (AR or EN)." },
+  { n: "04", title: "Groq Inference",    desc: "llama-3.3-70b processes context and returns structured JSON: formula, type, styleHints, explanation." },
+  { n: "05", title: "Formula Insert",    desc: "Formula built into a range matrix and inserted via Office.js API — correct for every cell in the selection." },
+  { n: "06", title: "Style Applied",     desc: "Style hints (colors, bold, conditional rules) are applied via Excel formatting API automatically." },
 ];
 
+const pRowH = 54;
 pipeline.forEach((p, i) => {
-  const px2 = ML, py2 = cy + i * 62;
-  rect(px2, py2, 36, 36, C.gold, 18);
-  doc.fillColor(C.dark).fontSize(10).font("Helvetica-Bold")
-     .text(p.step, px2 + 6, py2 + 11, { lineBreak: false });
-  rect(px2 + 46, py2, TW - 46, 52, C.navyLt, 6);
-  rect(px2 + 46, py2, 3, 52, C.gold, 0);
-  doc.fillColor(C.white).fontSize(10).font("Helvetica-Bold")
-     .text(p.title, px2 + 58, py2 + 8, { lineBreak: false });
-  doc.fillColor(C.slate).fontSize(8.5).font("Helvetica")
-     .text(p.desc, px2 + 58, py2 + 26, { width: TW - 70 });
-  // connector
+  const py2 = cy + i * (pRowH + 6);
+  // number badge
+  doc.save().circle(ML + 18, py2 + 16, 16).fill(C.gold).restore();
+  doc.fillColor(C.dark).fontSize(9).font("Helvetica-Bold")
+     .text(p.n, ML + 11, py2 + 11, { lineBreak: false });
+  // card
+  rect(ML + 44, py2, TW - 44, pRowH, C.navyLt, 6);
+  rect(ML + 44, py2, 3, pRowH, C.gold, 0);
+  doc.fillColor(C.white).fontSize(9.5).font("Helvetica-Bold")
+     .text(p.title, ML + 54, py2 + 8, { width: TW - 64, lineBreak: false });
+  doc.fillColor(C.slate).fontSize(8).font("Helvetica")
+     .text(p.desc, ML + 54, py2 + 26, { width: TW - 64, height: 22, ellipsis: true });
+  // connector dot
   if (i < pipeline.length - 1) {
-    doc.save().strokeColor(C.gold).opacity(0.4).lineWidth(1)
-       .dash(3, { space: 3 })
-       .moveTo(px2 + 18, py2 + 36).lineTo(px2 + 18, py2 + 62)
+    doc.save().strokeColor(C.gold).opacity(0.35).lineWidth(1)
+       .dash(2, { space: 3 })
+       .moveTo(ML + 18, py2 + 32).lineTo(ML + 18, py2 + pRowH + 6)
        .stroke().restore();
   }
 });
-cy += pipeline.length * 62 + 10;
+cy += pipeline.length * (pRowH + 6) + 8;
 
 hLine(cy, C.navyLt, 0.7);
-cy += 14;
+cy += 12;
 
-// AI Response structure
+// JSON response structure
 doc.fillColor(C.gold).fontSize(12).font("Helvetica-Bold")
-   .text("What the AI Returns (Structured JSON)", ML, cy);
-cy += 18;
+   .text("Structured AI Response (JSON)", ML, cy);
+cy += 16;
 
-rect(ML, cy, TW, 90, C.dark, 6);
-rect(ML, cy, 3, 90, C.accent, 0);
-const jsonSample = `{
-  "formula":      "=AVERAGEIF(B:B, E2, C:C)",
-  "formulaType":  "analytical",
-  "explanation":  "Calculates average salary per department using AVERAGEIF",
-  "styleHints": {
-    "fontBold":   true,
-    "fillColor":  "background",
-    "fontColor":  "#FFFFFF"
-  }
-}`;
-doc.fillColor(C.goldLt).fontSize(8).font("Courier")
-   .text(jsonSample, ML + 12, cy + 8, { width: TW - 20 });
-cy += 104;
+rect(ML, cy, TW, 88, C.dark, 8);
+rect(ML, cy, 3, 88, C.accent, 0);
+const jsonLines = [
+  '{',
+  '  "formula":      "=AVERAGEIF(B:B, E2, C:C)",',
+  '  "formulaType":  "analytical",',
+  '  "explanation":  "Average salary per department",',
+  '  "styleHints": {',
+  '     "fontBold": true,  "fillColor": "background"',
+  '  }',
+  '}',
+];
+jsonLines.forEach((line, i) => {
+  doc.fillColor(C.goldLt).fontSize(7.5).font("Courier")
+     .text(line, ML + 12, cy + 8 + i * 10, { lineBreak: false, width: TW - 24 });
+});
+cy += 100;
+
+hLine(cy, C.navyLt, 0.7);
+cy += 12;
 
 // Conditional formatting intelligence
 doc.fillColor(C.gold).fontSize(12).font("Helvetica-Bold")
    .text("Conditional Formatting Intelligence", ML, cy);
-cy += 16;
+cy += 14;
 
-doc.fillColor(C.white).fontSize(9.5).font("Helvetica")
+doc.fillColor(C.white).fontSize(9).font("Helvetica")
    .text(
-     "SniperSheet understands conditional language in both Arabic and English and translates it into proper Excel conditional formatting rules — not just static colors that never update:",
+     "SniperSheet translates natural-language conditions into proper Excel conditional formatting rules that update dynamically as your data changes:",
      ML, cy, { width: TW }
    );
-cy += 38;
+cy += 30;
+
+const cfW1 = TW * 0.52, cfW2 = TW - cfW1;
+tableRowDraw(["YOUR COMMAND", "EXCEL RULE CREATED"], [cfW1, cfW2], cy, true);
+cy += 22;
 
 const cfRows = [
-  ["\"Highlight values below 50\"",              "LessThan 50  → orange fill"],
-  ["\"Color top 10% in green\"",                  "TopPercent 10  → green fill"],
-  ["\"Mark negative numbers red\"",               "LessThan 0  → red fill + bold"],
-  ["\"لون الخلايا الأقل من 100 باللون الأحمر\"",  "LessThan 100  → red fill (Arabic)"],
-  ["\"أبرز القيم فوق المتوسط باللون الأزرق\"",    "AboveAverage  → blue fill (Arabic)"],
+  ['"Highlight values below 50"',            "LessThan 50  ->  orange fill"],
+  ['"Color top 10 percent in green"',         "TopPercent 10  ->  green fill"],
+  ['"Mark negative numbers red"',             "LessThan 0  ->  red fill + bold"],
+  ['"Values below 100 in red (Arabic)"',      "LessThan 100  ->  red fill"],
+  ['"Above average highlighted blue"',        "AboveAverage rule  ->  blue fill"],
 ];
-tableRow(["COMMAND (YOUR WORDS)", "EXCEL RULE CREATED"], cy, [TW * 0.54, TW * 0.46], true);
-cy += 22;
-cfRows.forEach(r => {
+cfRows.forEach((r, ri) => {
+  if (ri % 2 === 0) rect(ML, cy, TW, 18, "#091829", 0);
   doc.fillColor(C.white).fontSize(7.5).font("Helvetica-Bold")
-     .text(r[0], ML + 6, cy + 4, { width: TW * 0.54 - 10, lineBreak: false });
+     .text(r[0], ML + 5, cy + 4, { width: cfW1 - 8, lineBreak: false, ellipsis: true });
   doc.fillColor(C.green).fontSize(7.5).font("Helvetica")
-     .text("→  " + r[1], ML + TW * 0.54 + 4, cy + 4, { width: TW * 0.46 - 10, lineBreak: false });
-  cy += tableRow([], cy, [], false);
+     .text("-> " + r[1], ML + cfW1 + 4, cy + 4, { width: cfW2 - 8, lineBreak: false, ellipsis: true });
+  cy += 18;
+  doc.save().strokeColor(C.navyLt).opacity(0.35).lineWidth(0.3)
+     .moveTo(ML, cy).lineTo(MR, cy).stroke().restore();
 });
 
 // Footer
 rect(0, H - 36, W, 36, C.dark);
 hLine(H - 36, C.gold, 0.4);
-doc.fillColor(C.slate).fontSize(7.5).font("Helvetica")
-   .text("SniperSheet  ·  © 2025–2026 Mustafa Alsahlany  ·  All Rights Reserved  ·  Page 5", ML, H - 20, { lineBreak: false });
+doc.fillColor(C.slate).fontSize(7).font("Helvetica")
+   .text("SniperSheet  |  (c) 2025-2026 Mustafa Alsahlany  |  All Rights Reserved  |  Page 5 of 6",
+         ML, H - 18, { lineBreak: false });
 
 // ─────────────────────────────────────────────────────────────────────────────
 // PAGE 6 — SECURITY + GET STARTED + CLOSING
@@ -566,95 +647,105 @@ doc.addPage({ size: "A4", margins: { top: 0, bottom: 0, left: 0, right: 0 } });
 rect(0, 0, W, H, C.navy);
 rect(0, 0, W, 6, C.gold);
 
-cy = 30;
+cy = 28;
 cy = sectionHeader("Security, Privacy & Getting Started", "", cy);
 
-// Security section
+// Security
 doc.fillColor(C.gold).fontSize(12).font("Helvetica-Bold")
    .text("Enterprise-Grade Security", ML, cy);
 cy += 18;
 
 const secItems = [
-  { icon: "🔐", title: "CORS Protection",      desc: "API is locked exclusively to the official SniperSheet domain. Requests from unknown origins are blocked with 403." },
-  { icon: "⏱",  title: "Rate Limiting",         desc: "200 requests/15 min globally · 60 requests/15 min for AI endpoints. Prevents abuse and ensures fair usage." },
-  { icon: "🪙",  title: "App Token Auth",        desc: "Every AI request requires a proprietary token. Direct API access without the Add-in is rejected with 401." },
-  { icon: "🔏",  title: "Data Privacy",          desc: "Your spreadsheet data is transmitted only when you click Analyze. Nothing is stored on the server after processing." },
-  { icon: "🛡",  title: "HTTPS Encryption",      desc: "All communication is encrypted end-to-end via TLS. No plain-text data transmission." },
-  { icon: "©",   title: "Copyright Protection",  desc: "Every API response includes copyright attribution headers identifying SniperSheet as a proprietary product." },
+  { abbr: "CRS", bg: C.red,    title: "CORS Protection",
+    desc: "API locked to the official SniperSheet domain only. Requests from any other origin are rejected." },
+  { abbr: "LMT", bg: C.accent, title: "Rate Limiting",
+    desc: "200 req / 15 min globally. 60 req / 15 min for AI endpoints. Prevents abuse and ensures fair usage." },
+  { abbr: "TKN", bg: C.gold,   title: "App Token Auth",
+    desc: "Every AI request requires a proprietary token. Direct API access without the Add-in is rejected." },
+  { abbr: "PVT", bg: C.green,  title: "Data Privacy",
+    desc: "Data is sent only when you click Analyze. Nothing is stored on the server after processing completes." },
+  { abbr: "TLS", bg: "#8E44AD",title: "HTTPS Encryption",
+    desc: "All communication is encrypted end-to-end via TLS. No plain-text transmission at any point." },
+  { abbr: "CPY", bg: C.slate,  title: "Copyright Protection",
+    desc: "Every API response includes copyright attribution headers — SniperSheet is a proprietary product." },
 ];
 
-const sh = 62;
+const si_w = (TW - 10) / 2;
+const si_h = 60;
 secItems.forEach((s, i) => {
-  const scol = i % 2, srow = Math.floor(i / 2);
-  const sx = ML + scol * (TW / 2 + 5);
-  const sy = cy + srow * (sh + 8);
-  rect(sx, sy, TW / 2 - 5, sh, C.navyLt, 6);
-  rect(sx, sy, 3, sh, C.accent, 0);
+  const col = i % 2, row = Math.floor(i / 2);
+  const sx = ML + col * (si_w + 10);
+  const sy = cy + row * (si_h + 8);
+  rect(sx, sy, si_w, si_h, C.navyLt, 6);
+  rect(sx, sy, 3, si_h, C.accent, 0);
+  iconBadge(s.abbr, sx + 8, sy + 10, 13, s.bg, C.dark);
   doc.fillColor(C.white).fontSize(9).font("Helvetica-Bold")
-     .text(s.icon + "  " + s.title, sx + 12, sy + 8, { width: TW / 2 - 24, lineBreak: false });
+     .text(s.title, sx + 42, sy + 10, { width: si_w - 52, lineBreak: false, ellipsis: true });
   doc.fillColor(C.slate).fontSize(7.5).font("Helvetica")
-     .text(s.desc, sx + 12, sy + 26, { width: TW / 2 - 24 });
+     .text(s.desc, sx + 42, sy + 28, { width: si_w - 52, height: 26, ellipsis: true });
 });
-cy += Math.ceil(secItems.length / 2) * (sh + 8) + 12;
+cy += Math.ceil(secItems.length / 2) * (si_h + 8) + 12;
 
 hLine(cy, C.navyLt, 0.7);
-cy += 14;
+cy += 12;
 
 // Getting Started
 doc.fillColor(C.gold).fontSize(12).font("Helvetica-Bold")
    .text("Get Started in 60 Seconds", ML, cy);
-cy += 18;
+cy += 16;
 
 const gsteps = [
-  "Open Microsoft Excel (Desktop or Online)",
-  "Go to Insert → Add-ins → Upload My Add-in",
-  "Upload the SniperSheet manifest file",
-  "The SniperSheet task pane appears on the right",
+  "Open Microsoft Excel (Desktop or Excel Online)",
+  "Go to  Insert  ->  Add-ins  ->  Upload My Add-in",
+  "Upload the SniperSheet manifest XML file",
+  "The SniperSheet task pane appears on the right side",
   "Select any cells, type your goal, click Analyze",
-  "Watch Excel do the work — in seconds",
+  "Excel does the work — formula applied in seconds",
 ];
 gsteps.forEach((s, i) => {
-  rect(ML, cy, TW, 22, i % 2 === 0 ? C.navyLt : C.navyMid, 4);
-  rect(ML, cy, 28, 22, C.gold, 4);
+  const rowBg = i % 2 === 0 ? C.navyLt : C.navyMid;
+  rect(ML, cy, TW, 22, rowBg, 4);
+  rect(ML, cy, 26, 22, C.gold, 4);
   doc.fillColor(C.dark).fontSize(9).font("Helvetica-Bold")
-     .text(String(i + 1), ML + 10, cy + 6, { lineBreak: false });
-  doc.fillColor(C.white).fontSize(9).font("Helvetica")
-     .text(s, ML + 36, cy + 6, { width: TW - 46, lineBreak: false });
+     .text(String(i + 1), ML + 9, cy + 6, { lineBreak: false });
+  doc.fillColor(C.white).fontSize(8.5).font("Helvetica")
+     .text(s, ML + 34, cy + 6, { width: TW - 44, lineBreak: false, ellipsis: true });
   cy += 24;
 });
-cy += 8;
+cy += 10;
 
 hLine(cy, C.navyLt, 0.7);
-cy += 14;
+cy += 12;
 
-// Closing statement
-rect(ML, cy, TW, 80, C.navyLt, 10);
+// Closing CTA
+rect(ML, cy, TW, 78, C.navyLt, 10);
 rect(ML, cy, TW, 4, C.gold, 0);
-doc.fillColor(C.white).fontSize(14).font("Helvetica-Bold")
-   .text("Ready to Transform Your Excel Experience?", ML + 20, cy + 20, { width: TW - 40 });
-doc.fillColor(C.slate).fontSize(9.5).font("Helvetica")
+doc.fillColor(C.white).fontSize(13).font("Helvetica-Bold")
+   .text("Ready to Transform Your Excel Experience?", ML + 16, cy + 16, { width: TW - 32 });
+doc.fillColor(C.slate).fontSize(9).font("Helvetica")
    .text(
      "SniperSheet is the fastest way to turn any Excel task into a one-sentence command.\nNo formulas. No training. No limits.",
-     ML + 20, cy + 46, { width: TW - 40 }
+     ML + 16, cy + 42, { width: TW - 32 }
    );
-cy += 96;
+cy += 92;
 
-// Contact / domain
-rect(ML, cy, TW, 52, C.dark, 8);
+// Contact block
+rect(ML, cy, TW, 50, C.dark, 8);
 rect(ML, cy, TW, 2, C.gold, 0);
 doc.fillColor(C.gold).fontSize(11).font("Helvetica-Bold")
-   .text("SniperSheet", ML + 16, cy + 12, { lineBreak: false });
+   .text("SniperSheet", ML + 14, cy + 10, { lineBreak: false });
 doc.fillColor(C.slate).fontSize(9).font("Helvetica")
-   .text("Developed by Mustafa Alsahlany", ML + 16, cy + 28, { lineBreak: false });
+   .text("Developed by Mustafa Alsahlany", ML + 14, cy + 28, { lineBreak: false });
 doc.fillColor(C.accent).fontSize(9).font("Helvetica")
-   .text("node-runner-mustafaalshlany.replit.app", MR - 232, cy + 28, { lineBreak: false });
+   .text("node-runner-mustafaalshlany.replit.app", MR - 230, cy + 28, { lineBreak: false });
 
 // Final footer
 rect(0, H - 36, W, 36, C.dark);
 hLine(H - 36, C.gold, 0.4);
-doc.fillColor(C.slate).fontSize(7.5).font("Helvetica")
-   .text("SniperSheet  ·  © 2025–2026 Mustafa Alsahlany  ·  All Rights Reserved  ·  Unauthorized distribution prohibited.", ML, H - 20, { lineBreak: false });
+doc.fillColor(C.slate).fontSize(7).font("Helvetica")
+   .text("SniperSheet  |  (c) 2025-2026 Mustafa Alsahlany  |  All Rights Reserved  |  Unauthorized distribution prohibited.",
+         ML, H - 18, { lineBreak: false });
 
 // ─────────────────────────────────────────────────────────────────────────────
 doc.end();
-console.log("PDF generated →", OUTPUT);
+console.log("PDF generated ->", OUTPUT);
