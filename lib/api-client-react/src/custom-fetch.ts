@@ -17,6 +17,7 @@ const DEFAULT_JSON_ACCEPT = "application/json, application/problem+json";
 
 let _baseUrl: string | null = null;
 let _authTokenGetter: AuthTokenGetter | null = null;
+const _staticHeaders: Record<string, string> = {};
 
 /**
  * Set a base URL that is prepended to every relative request URL
@@ -27,6 +28,18 @@ let _authTokenGetter: AuthTokenGetter | null = null;
  */
 export function setBaseUrl(url: string | null): void {
   _baseUrl = url ? url.replace(/\/+$/, "") : null;
+}
+
+/**
+ * Set a static header that will be sent with every request.
+ * Pass `null` as value to remove the header.
+ */
+export function setStaticHeader(name: string, value: string | null): void {
+  if (value === null) {
+    delete _staticHeaders[name];
+  } else {
+    _staticHeaders[name] = value;
+  }
 }
 
 /**
@@ -335,7 +348,11 @@ export async function customFetch<T = unknown>(
     throw new TypeError(`customFetch: ${method} requests cannot have a body.`);
   }
 
-  const headers = mergeHeaders(isRequest(input) ? input.headers : undefined, headersInit);
+  const headers = mergeHeaders(
+    Object.keys(_staticHeaders).length > 0 ? _staticHeaders : undefined,
+    isRequest(input) ? input.headers : undefined,
+    headersInit,
+  );
 
   if (
     typeof init.body === "string" &&

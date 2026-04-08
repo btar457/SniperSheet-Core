@@ -24,3 +24,9 @@ expertMode = true
 [postMerge]
 path = "scripts/post-merge.sh"
 timeoutMs = 20000
+
+[userenv]
+
+[userenv.shared]
+VITE_APP_TOKEN = "snpr-v1-mustafa-alsahlany-2025"
+SNIPER_APP_TOKEN = "snpr-v1-mustafa-alsahlany-2025"

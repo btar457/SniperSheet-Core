@@ -54,9 +54,28 @@ export default defineConfig({
     dedupe: ["react", "react-dom"],
   },
   root: path.resolve(import.meta.dirname),
+  esbuild: {
+    pure: ["console.log", "console.debug"],
+    legalComments: "none",
+  },
   build: {
     outDir: path.resolve(import.meta.dirname, "dist/public"),
     emptyOutDir: true,
+    sourcemap: false,
+    minify: "esbuild",
+    rollupOptions: {
+      output: {
+        banner: "/* © 2025-2026 Mustafa Alsahlany. SniperSheet - All Rights Reserved. Unauthorized copying or distribution prohibited. */",
+        manualChunks(id) {
+          if (id.includes("node_modules")) {
+            if (id.includes("react") || id.includes("react-dom")) return "react-vendor";
+            if (id.includes("@tanstack")) return "query-vendor";
+            if (id.includes("office")) return "office-vendor";
+            return "vendor";
+          }
+        },
+      },
+    },
   },
   server: {
     port,
