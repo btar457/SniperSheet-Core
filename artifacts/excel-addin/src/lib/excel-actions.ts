@@ -26,7 +26,8 @@ function resolveColor(raw: string): string {
 // ─── TYPES ───────────────────────────────────────────────────────────────────
 
 export interface ColorConditionRule {
-  operator: "GreaterThan" | "LessThan" | "GreaterThanOrEqualTo" | "LessThanOrEqualTo" | "EqualTo" | "NotEqualTo";
+  // Office.js ConditionalCellValueOperator string values (camelCase keys, PascalCase values)
+  operator: "GreaterThan" | "LessThan" | "GreaterThanOrEqual" | "LessThanOrEqual" | "EqualTo" | "NotEqualTo";
   value: number;
   fillColor: string;
   fontColor?: string;
@@ -57,14 +58,14 @@ export interface CellData {
 // ─── PARSE COLOR CONDITION ────────────────────────────────────────────────────
 
 export function parseColorConditionText(text: string): ColorConditionRule | null {
-  const patterns = [
-    { re: /(?:cells?|values?|خلايا|قيم)\s*>\s*(\d+(?:\.\d+)?)\s+(?:in\s+)?([a-zA-Zأ-ي]+)/i,  op: "GreaterThan" as const },
-    { re: /(?:cells?|values?|خلايا|قيم)\s*<\s*(\d+(?:\.\d+)?)\s+(?:in\s+)?([a-zA-Zأ-ي]+)/i,  op: "LessThan" as const },
-    { re: /(?:cells?|values?|خلايا|قيم)\s*>=\s*(\d+(?:\.\d+)?)\s+(?:in\s+)?([a-zA-Zأ-ي]+)/i, op: "GreaterThanOrEqualTo" as const },
-    { re: /(?:cells?|values?|خلايا|قيم)\s*<=\s*(\d+(?:\.\d+)?)\s+(?:in\s+)?([a-zA-Zأ-ي]+)/i, op: "LessThanOrEqualTo" as const },
-    { re: /(?:cells?|values?|خلايا|قيم)\s*=\s*(\d+(?:\.\d+)?)\s+(?:in\s+)?([a-zA-Zأ-ي]+)/i,  op: "EqualTo" as const },
-    { re: /(?:الأعلى|أكبر)\s+من\s+(\d+(?:\.\d+)?)\s+([a-zA-Zأ-ي]+)/i,                        op: "GreaterThan" as const },
-    { re: /(?:الأقل|أصغر)\s+من\s+(\d+(?:\.\d+)?)\s+([a-zA-Zأ-ي]+)/i,                         op: "LessThan" as const },
+  const patterns: Array<{ re: RegExp; op: ColorConditionRule["operator"] }> = [
+    { re: /(?:cells?|values?|خلايا|قيم)\s*>=\s*(\d+(?:\.\d+)?)\s+(?:in\s+)?([a-zA-Zأ-ي]+)/i, op: "GreaterThanOrEqual" },
+    { re: /(?:cells?|values?|خلايا|قيم)\s*<=\s*(\d+(?:\.\d+)?)\s+(?:in\s+)?([a-zA-Zأ-ي]+)/i, op: "LessThanOrEqual" },
+    { re: /(?:cells?|values?|خلايا|قيم)\s*>\s*(\d+(?:\.\d+)?)\s+(?:in\s+)?([a-zA-Zأ-ي]+)/i,  op: "GreaterThan" },
+    { re: /(?:cells?|values?|خلايا|قيم)\s*<\s*(\d+(?:\.\d+)?)\s+(?:in\s+)?([a-zA-Zأ-ي]+)/i,  op: "LessThan" },
+    { re: /(?:cells?|values?|خلايا|قيم)\s*=\s*(\d+(?:\.\d+)?)\s+(?:in\s+)?([a-zA-Zأ-ي]+)/i,  op: "EqualTo" },
+    { re: /(?:الأعلى|أكبر|اكبر)\s+من\s+(\d+(?:\.\d+)?)\s+([a-zA-Zأ-ي]+)/i,                   op: "GreaterThan" },
+    { re: /(?:الأقل|أصغر|اقل)\s+من\s+(\d+(?:\.\d+)?)\s+([a-zA-Zأ-ي]+)/i,                      op: "LessThan" },
   ];
   for (const { re, op } of patterns) {
     const m = text.match(re);
@@ -137,12 +138,15 @@ export async function applyConditionalColorToSelection(rule: ColorConditionRule)
       const range = context.workbook.getSelectedRange();
       range.load("address");
       await context.sync();
-      const cf = range.conditionalFormats.add(Excel.ConditionalFormatType.cellValue);
+      const cf = range.conditionalFormats.add("CellValue" as any);
       cf.cellValue.format.fill.color = rule.fillColor;
       if (rule.fontColor) cf.cellValue.format.font.color = rule.fontColor;
+      // CRITICAL: pass the string value directly — do NOT use enum bracket lookup
+      // Excel.ConditionalCellValueOperator["LessThan"] === undefined (keys are camelCase)
+      // but Office.js accepts the PascalCase string values directly ("LessThan", "GreaterThan", etc.)
       cf.cellValue.rule = {
-        formula1: `${rule.value}`,
-        operator: Excel.ConditionalCellValueOperator[rule.operator],
+        formula1: String(rule.value),
+        operator: rule.operator as any,
       };
       await context.sync();
     });
@@ -540,57 +544,66 @@ export async function applyAIStyleHints(hints: AIStyleHint[]): Promise<ActionRes
   if (!hints || hints.length === 0) return { ok: true, message: "No style hints to apply" };
 
   const results: string[] = [];
+  const errors:  string[] = [];
   for (const hint of hints) {
     if (!hint.color) continue;
     const hex = resolveColor(hint.color);
     const isFontColor = hint.target === "font";
 
     if (hint.condition) {
-      // Parse condition like "value > 50" or "> 90"
-      const condMatch = hint.condition.match(/([><=!]+)\s*(-?\d+(?:\.\d+)?)/);
+      // Parse condition like "< 50", "> 100", ">= 60", "value < 50"
+      const condMatch = hint.condition.match(/([><=!]{1,2})\s*(-?\d+(?:\.\d+)?)/);
       if (condMatch) {
         const opStr = condMatch[1];
         const val   = parseFloat(condMatch[2]);
-        const opMap: Record<string, string> = {
+        // Must match Office.js ConditionalCellValueOperator string values exactly
+        const opMap: Record<string, ColorConditionRule["operator"]> = {
           ">":  "GreaterThan",
-          ">=": "GreaterThanOrEqualTo",
+          ">=": "GreaterThanOrEqual",
           "<":  "LessThan",
-          "<=": "LessThanOrEqualTo",
+          "<=": "LessThanOrEqual",
           "=":  "EqualTo",
           "==": "EqualTo",
           "!=": "NotEqualTo",
           "<>": "NotEqualTo",
         };
-        const op = opMap[opStr] as ColorConditionRule["operator"];
+        const op = opMap[opStr];
         if (op) {
           const r = await applyConditionalColorToSelection({
-            operator: op, value: val, fillColor: hex,
+            operator: op, value: val,
+            fillColor: isFontColor ? "#FFFFFF" : hex,
             fontColor: isFontColor ? hex : undefined,
           });
-          if (r.ok) results.push("Conditional color applied");
+          if (r.ok) results.push("✅ تنسيق شرطي مُطبَّق");
+          else errors.push(r.error ?? "فشل التنسيق الشرطي");
         }
       }
     } else if (isFontColor) {
       // Apply font (text) color
       const r = await applySelectionFormat({ fontColor: hex });
-      if (r.ok) results.push(`Font color ${hex} applied`);
+      if (r.ok) results.push(`✅ لون خط ${hex} مُطبَّق`);
+      else errors.push(r.error ?? "فشل تطبيق لون الخط");
     } else {
       // Apply fill (background) color
       const r = await applyFillColorToSelection(hex);
-      if (r.ok) results.push(`Fill color ${hex} applied`);
+      if (r.ok) results.push(`✅ لون خلفية ${hex} مُطبَّق`);
+      else errors.push(r.error ?? "فشل تطبيق لون الخلفية");
     }
 
     // Bold
     if (hint.bold === true) {
-      await applySelectionFormat({ bold: true });
-      results.push("Bold applied");
+      const r = await applySelectionFormat({ bold: true });
+      if (r.ok) results.push("✅ خط عريض مُطبَّق");
     }
     // Italic
     if (hint.italic === true) {
-      await applySelectionFormat({ italic: true });
-      results.push("Italic applied");
+      const r = await applySelectionFormat({ italic: true });
+      if (r.ok) results.push("✅ خط مائل مُطبَّق");
     }
   }
 
+  if (errors.length > 0 && results.length === 0) {
+    return { ok: false, error: errors[0] };
+  }
   return { ok: true, message: results.join("; ") || "Style hints applied" };
 }

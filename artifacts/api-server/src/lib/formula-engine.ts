@@ -93,12 +93,36 @@ const HAS_AR = /[\u0600-\u06FF]/;
 
 function isArabic(t: string) { return HAS_AR.test(t); }
 
+function extractConditionFromText(text: string): string | undefined {
+  const n = norm(text);
+  const num = extractNumber(text);
+  if (num === null) return undefined;
+
+  // Arabic comparison patterns
+  if (n.includes("اقل من او يساوي") || n.includes("<="))               return `<= ${num}`;
+  if (n.includes("اكبر من او يساوي") || n.includes(">="))              return `>= ${num}`;
+  if (n.includes("اقل من") || n.includes("ادني من") || n.includes("دون") || n.includes("اصغر من") ||
+      n.includes("less than") || n.includes("below") || n.includes("under"))     return `< ${num}`;
+  if (n.includes("اكبر من") || n.includes("اعلي من") || n.includes("اعلى من") || n.includes("فوق") ||
+      n.includes("يتجاوز") || n.includes("greater than") || n.includes("above") ||
+      n.includes("more than") || n.includes("over"))                   return `> ${num}`;
+  if (n.includes("يساوي") || n.includes("مساوي") || n.includes("equal to"))     return `= ${num}`;
+  if (n.includes("سالب") || n.includes("negative"))                   return `< 0`;
+  if (n.includes("موجب") || n.includes("positive"))                   return `> 0`;
+
+  // Fallback: number found but no operator context — try to detect from word position
+  // e.g. "لون الخلايا 50" → ambiguous, return undefined
+  return undefined;
+}
+
 function detectColor(t: string): StyleHint[] {
-  const colors = ["أحمر", "أخضر", "أزرق", "أصفر", "برتقالي", "بنفسجي",
+  const colors = ["أحمر", "احمر", "أخضر", "اخضر", "أزرق", "ازرق",
+    "أصفر", "اصفر", "برتقالي", "بنفسجي",
     "red", "green", "blue", "yellow", "orange", "purple"];
+  const cond = extractConditionFromText(t);
   const hints: StyleHint[] = [];
   for (const c of colors) {
-    if (t.includes(c)) hints.push(colorHint(c, "condition"));
+    if (t.includes(c)) hints.push(colorHint(c, cond ?? "value > 0"));
   }
   return hints;
 }
@@ -505,17 +529,25 @@ const RULES: Rule[] = [
 
   // ── CONDITIONAL FORMATTING ONLY (colors) ─────────────────────────────────
   {
-    test: (_, n) => (n.includes("لون") || n.includes("color") || n.includes("colour") || n.includes("احمر") || n.includes("اخضر")) && !n.includes("اذا") && !n.includes("if"),
-    build: (raw, _, _n, _vals, ref) => {
+    test: (_, n) => (n.includes("لون") || n.includes("color") || n.includes("colour") || n.includes("احمر") || n.includes("اخضر") || n.includes("اصفر") || n.includes("ازرق")) && !n.includes("اذا") && !n.includes("if"),
+    build: (raw, _, n, _vals, ref) => {
       const cell = ref || "A1";
       const hints = detectColor(raw);
+      // Also try to extract condition even when no color name was found
+      const cond = extractConditionFromText(raw);
+      const defaultHint: StyleHint = cond
+        ? { target: "fill", color: "#FFD700", condition: cond }
+        : { target: "fill", color: "#FFD700", condition: undefined };
+      const finalHints = hints.length > 0 ? hints : [defaultHint];
+
+      const condText = cond ?? (n.includes("اقل") || n.includes("less") ? "< القيمة" : "> القيمة");
       return {
-        formula: `=${cell}`,
+        formula: "N/A",
         result: null,
-        reasoning: "تنسيق لوني مشروط — يُطبَّق عبر Conditional Formatting في Excel | Conditional color format — apply via Excel Conditional Formatting",
+        reasoning: `تنسيق لوني شرطي: ${condText} — يُطبَّق مباشرة على التحديد | Conditional color: apply to selection`,
         formulaType: "formatting",
-        styleHints: hints.length > 0 ? hints : [{ target: "fill", color: "#FFD700", condition: "value > 0" }],
-        confidence: 0.8,
+        styleHints: finalHints,
+        confidence: 0.85,
       };
     },
   },

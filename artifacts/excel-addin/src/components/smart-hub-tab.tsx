@@ -135,9 +135,22 @@ export function SmartHubTab() {
     );
   }
 
-  async function applyHintsIfAny(hints: SmartResult["styleHints"]) {
-    if (!hints || hints.length === 0) return;
-    await applyAIStyleHints(hints as AIStyleHint[]);
+  async function applyHintsIfAny(hints: SmartResult["styleHints"]): Promise<{ ok: boolean; msg: string }> {
+    if (!hints || hints.length === 0) return { ok: true, msg: "" };
+    const r = await applyAIStyleHints(hints as AIStyleHint[]);
+    return {
+      ok:  r.ok,
+      msg: r.ok ? (r.message ?? "تم التنسيق") : (r.error ?? "فشل التنسيق"),
+    };
+  }
+
+  function isFormattingOnly(res: SmartResult): boolean {
+    return (
+      res.formulaType === "formatting" ||
+      !res.formula ||
+      res.formula === "N/A" ||
+      res.formula === "=N/A"
+    );
   }
 
   async function handleInsertActive() {
@@ -145,28 +158,25 @@ export function SmartHubTab() {
     setInsertBusy("active");
     setInsertStatus(null);
 
-    const isFormattingOnly =
-      lastResult.formulaType === "formatting" ||
-      !lastResult.formula ||
-      lastResult.formula === "N/A" ||
-      lastResult.formula === "=N/A";
-
-    let ok = true;
+    let ok  = true;
     let msg = "";
 
-    if (!isFormattingOnly && lastResult.formula) {
-      const result = await insertFormulaInActiveCell(lastResult.formula);
-      ok  = result.ok;
-      msg = result.ok
+    if (!isFormattingOnly(lastResult) && lastResult.formula) {
+      const r = await insertFormulaInActiveCell(lastResult.formula);
+      ok  = r.ok;
+      msg = r.ok
         ? `✅ أُدرجت في ${selection?.activeCellAddress ?? "الخلية النشطة"}`
-        : (result.error ?? "خطأ");
+        : `❌ ${r.error ?? "خطأ في الإدراج"}`;
     }
 
-    // Always apply style hints if any
     if (lastResult.styleHints?.length > 0) {
-      await applyHintsIfAny(lastResult.styleHints);
-      msg = msg ? msg + " + تنسيق مُطبَّق ✅" : "✅ تم تطبيق التنسيق";
-      ok = true;
+      const sr = await applyHintsIfAny(lastResult.styleHints);
+      if (sr.ok) {
+        msg = msg ? `${msg} · ${sr.msg}` : `✅ ${sr.msg}`;
+      } else {
+        msg = `❌ ${sr.msg}`;
+        ok  = false;
+      }
     }
 
     if (!msg) msg = "✅ تم التنفيذ";
@@ -179,28 +189,25 @@ export function SmartHubTab() {
     setInsertBusy("range");
     setInsertStatus(null);
 
-    const isFormattingOnly =
-      lastResult.formulaType === "formatting" ||
-      !lastResult.formula ||
-      lastResult.formula === "N/A" ||
-      lastResult.formula === "=N/A";
-
-    let ok = true;
+    let ok  = true;
     let msg = "";
 
-    if (!isFormattingOnly && lastResult.formula) {
-      const result = await insertFormulaInAddress(lastResult.formula, selection.shortAddress);
-      ok  = result.ok;
-      msg = result.ok
+    if (!isFormattingOnly(lastResult) && lastResult.formula) {
+      const r = await insertFormulaInAddress(lastResult.formula, selection.shortAddress);
+      ok  = r.ok;
+      msg = r.ok
         ? `✅ أُدرجت في ${selection.shortAddress}`
-        : (result.error ?? "خطأ");
+        : `❌ ${r.error ?? "خطأ في الإدراج"}`;
     }
 
-    // Always apply style hints if any
     if (lastResult.styleHints?.length > 0) {
-      await applyHintsIfAny(lastResult.styleHints);
-      msg = msg ? msg + " + تنسيق مُطبَّق ✅" : "✅ تم تطبيق التنسيق";
-      ok = true;
+      const sr = await applyHintsIfAny(lastResult.styleHints);
+      if (sr.ok) {
+        msg = msg ? `${msg} · ${sr.msg}` : `✅ ${sr.msg}`;
+      } else {
+        msg = `❌ ${sr.msg}`;
+        ok  = false;
+      }
     }
 
     if (!msg) msg = "✅ تم التنفيذ";
