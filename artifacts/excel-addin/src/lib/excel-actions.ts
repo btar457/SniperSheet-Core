@@ -415,6 +415,20 @@ export async function unmergeCells(): Promise<ActionResult> {
 
 // ─── READ SELECTION VALUES ─────────────────────────────────────────────────────
 
+export interface CellFormatInfo {
+  fillColor: string | null;
+  fontColor: string | null;
+  bold: boolean;
+  italic: boolean;
+}
+
+export interface SelectionValuesAndFormat {
+  headers: string[];
+  rows: string[][];
+  headerFormats: CellFormatInfo[];
+  rowFormats: CellFormatInfo[][];
+}
+
 export async function readSelectionValues(): Promise<{ headers: string[]; rows: string[][] } | null> {
   if (!isExcelAvailable()) return null;
   try {
@@ -433,4 +447,124 @@ export async function readSelectionValues(): Promise<{ headers: string[]; rows: 
   } catch {
     return null;
   }
+}
+
+export async function readSelectionValuesAndFormat(): Promise<SelectionValuesAndFormat | null> {
+  if (!isExcelAvailable()) return null;
+  try {
+    let result: SelectionValuesAndFormat | null = null;
+    await Excel.run(async (context: any) => {
+      const range = context.workbook.getSelectedRange();
+      range.load(["values", "rowCount", "columnCount"]);
+      await context.sync();
+      if (!range.values || range.rowCount < 1) return;
+
+      const numRows = Math.min(range.rowCount, 51); // header + max 50 data rows
+      const numCols = range.columnCount;
+
+      // Batch all cell format loads in one sync for performance
+      const cells: any[][] = [];
+      for (let ri = 0; ri < numRows; ri++) {
+        cells[ri] = [];
+        for (let ci = 0; ci < numCols; ci++) {
+          const cell = range.getCell(ri, ci);
+          cell.load(["format/fill/color", "format/font/color", "format/font/bold", "format/font/italic"]);
+          cells[ri][ci] = cell;
+        }
+      }
+      await context.sync();
+
+      const all: string[][] = range.values.map((row: any[]) => row.map((c) => (c == null ? "" : String(c))));
+      const headers = all[0];
+      const rows    = all.slice(1);
+
+      const headerFormats: CellFormatInfo[] = [];
+      for (let ci = 0; ci < numCols; ci++) {
+        const cell = cells[0][ci];
+        headerFormats.push({
+          fillColor: cell.format.fill.color ?? null,
+          fontColor: cell.format.font.color ?? null,
+          bold: cell.format.font.bold === true,
+          italic: cell.format.font.italic === true,
+        });
+      }
+
+      const rowFormats: CellFormatInfo[][] = [];
+      for (let ri = 1; ri < numRows; ri++) {
+        const rowFmts: CellFormatInfo[] = [];
+        for (let ci = 0; ci < numCols; ci++) {
+          const cell = cells[ri][ci];
+          rowFmts.push({
+            fillColor: cell.format.fill.color ?? null,
+            fontColor: cell.format.font.color ?? null,
+            bold: cell.format.font.bold === true,
+            italic: cell.format.font.italic === true,
+          });
+        }
+        rowFormats.push(rowFmts);
+      }
+
+      result = { headers, rows, headerFormats, rowFormats };
+    });
+    return result;
+  } catch {
+    return null;
+  }
+}
+
+// ─── APPLY STYLE HINTS FROM AI ────────────────────────────────────────────────
+
+export interface AIStyleHint {
+  target: string;
+  color?: string | null;
+  bold?: boolean | null;
+  italic?: boolean | null;
+  condition?: string | null;
+}
+
+export async function applyAIStyleHints(hints: AIStyleHint[]): Promise<ActionResult> {
+  if (!isExcelAvailable()) return { ok: false, error: "Excel not available" };
+  if (!hints || hints.length === 0) return { ok: true, message: "No style hints to apply" };
+
+  const results: string[] = [];
+  for (const hint of hints) {
+    if (!hint.color) continue;
+    const hex = resolveColor(hint.color);
+
+    if (hint.condition) {
+      // Parse condition like "value > 50" or "> 90"
+      const condMatch = hint.condition.match(/([><=!]+)\s*(-?\d+(?:\.\d+)?)/);
+      if (condMatch) {
+        const opStr = condMatch[1];
+        const val   = parseFloat(condMatch[2]);
+        const opMap: Record<string, string> = {
+          ">":  "GreaterThan",
+          ">=": "GreaterThanOrEqualTo",
+          "<":  "LessThan",
+          "<=": "LessThanOrEqualTo",
+          "=":  "EqualTo",
+          "==": "EqualTo",
+          "!=": "NotEqualTo",
+          "<>": "NotEqualTo",
+        };
+        const op = opMap[opStr] as ColorConditionRule["operator"];
+        if (op) {
+          const r = await applyConditionalColorToSelection({ operator: op, value: val, fillColor: hex });
+          if (r.ok) results.push(`Conditional color applied`);
+        }
+      }
+    } else {
+      // Solid fill color
+      const r = await applyFillColorToSelection(hex);
+      if (r.ok) results.push(`Fill color ${hex} applied`);
+    }
+
+    // Bold
+    if (hint.bold) {
+      await applySelectionFormat({ bold: true });
+      results.push("Bold applied");
+    }
+  }
+
+  return { ok: true, message: results.join("; ") || "Style hints applied" };
 }

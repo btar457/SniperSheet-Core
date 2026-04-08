@@ -15,7 +15,15 @@ import {
 
 import { scanWithWordRadar } from "@/lib/word-radar";
 import { useSelectionSensor } from "@/hooks/use-selection-sensor";
-import { insertFormulaInActiveCell, insertFormulaInAddress } from "@/lib/excel-actions";
+import {
+  insertFormulaInActiveCell,
+  insertFormulaInAddress,
+  applyAIStyleHints,
+  applyFillColorToSelection,
+  applyConditionalColorToSelection,
+  parseColorConditionText,
+  type AIStyleHint,
+} from "@/lib/excel-actions";
 import { ContextActionsCard } from "@/components/context-actions-card";
 import { QuickFormulaCard } from "@/components/quick-formula-card";
 import { SmartCopyCard } from "@/components/smart-copy-card";
@@ -128,27 +136,76 @@ export function SmartHubTab() {
     );
   }
 
+  async function applyHintsIfAny(hints: SmartResult["styleHints"]) {
+    if (!hints || hints.length === 0) return;
+    await applyAIStyleHints(hints as AIStyleHint[]);
+  }
+
   async function handleInsertActive() {
-    if (!lastResult?.formula) return;
+    if (!lastResult) return;
     setInsertBusy("active");
     setInsertStatus(null);
-    const result = await insertFormulaInActiveCell(lastResult.formula);
-    setInsertStatus({
-      ok: result.ok,
-      msg: result.ok ? `✅ أُدرجت في ${selection?.activeCellAddress ?? "الخلية النشطة"}` : (result.error ?? "خطأ"),
-    });
+
+    const isFormattingOnly =
+      lastResult.formulaType === "formatting" ||
+      !lastResult.formula ||
+      lastResult.formula === "N/A" ||
+      lastResult.formula === "=N/A";
+
+    let ok = true;
+    let msg = "";
+
+    if (!isFormattingOnly && lastResult.formula) {
+      const result = await insertFormulaInActiveCell(lastResult.formula);
+      ok  = result.ok;
+      msg = result.ok
+        ? `✅ أُدرجت في ${selection?.activeCellAddress ?? "الخلية النشطة"}`
+        : (result.error ?? "خطأ");
+    }
+
+    // Always apply style hints if any
+    if (lastResult.styleHints?.length > 0) {
+      await applyHintsIfAny(lastResult.styleHints);
+      msg = msg ? msg + " + تنسيق مُطبَّق ✅" : "✅ تم تطبيق التنسيق";
+      ok = true;
+    }
+
+    if (!msg) msg = "✅ تم التنفيذ";
+    setInsertStatus({ ok, msg });
     setInsertBusy(null);
   }
 
   async function handleInsertInRange() {
-    if (!lastResult?.formula || !selection?.shortAddress) return;
+    if (!lastResult || !selection?.shortAddress) return;
     setInsertBusy("range");
     setInsertStatus(null);
-    const result = await insertFormulaInAddress(lastResult.formula, selection.shortAddress);
-    setInsertStatus({
-      ok: result.ok,
-      msg: result.ok ? `✅ أُدرجت في ${selection.shortAddress}` : (result.error ?? "خطأ"),
-    });
+
+    const isFormattingOnly =
+      lastResult.formulaType === "formatting" ||
+      !lastResult.formula ||
+      lastResult.formula === "N/A" ||
+      lastResult.formula === "=N/A";
+
+    let ok = true;
+    let msg = "";
+
+    if (!isFormattingOnly && lastResult.formula) {
+      const result = await insertFormulaInAddress(lastResult.formula, selection.shortAddress);
+      ok  = result.ok;
+      msg = result.ok
+        ? `✅ أُدرجت في ${selection.shortAddress}`
+        : (result.error ?? "خطأ");
+    }
+
+    // Always apply style hints if any
+    if (lastResult.styleHints?.length > 0) {
+      await applyHintsIfAny(lastResult.styleHints);
+      msg = msg ? msg + " + تنسيق مُطبَّق ✅" : "✅ تم تطبيق التنسيق";
+      ok = true;
+    }
+
+    if (!msg) msg = "✅ تم التنفيذ";
+    setInsertStatus({ ok, msg });
     setInsertBusy(null);
   }
 

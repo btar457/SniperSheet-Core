@@ -7,7 +7,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { SelectionInfo } from "@/hooks/use-selection-sensor";
-import { readSelectionValues } from "@/lib/excel-actions";
+import { readSelectionValuesAndFormat, type SelectionValuesAndFormat } from "@/lib/excel-actions";
 
 // ─── PAPER DEFINITIONS (mm) ───────────────────────────────────────────────────
 const PAPERS: Record<string, { w: number; h: number; label: string }> = {
@@ -68,7 +68,7 @@ function PagePreview({
   margin: MarginKey;
   fit: FitId;
   scale: number;
-  data: { headers: string[]; rows: string[][] } | null;
+  data: SelectionValuesAndFormat | null;
   title: string;
   showGrid: boolean;
   showHeaders: boolean;
@@ -133,69 +133,69 @@ function PagePreview({
                 {showHeaders && (
                   <div
                     className="shrink-0 text-center font-bold"
-                    style={{
-                      width: colW * 0.3,
-                      fontSize,
-                      backgroundColor: "#e2e8f0",
-                      borderRight: "1px solid #cbd5e1",
-                    }}
+                    style={{ width: colW * 0.3, fontSize, backgroundColor: "#e2e8f0", borderRight: "1px solid #cbd5e1" }}
                   >
                     #
                   </div>
                 )}
-                {data.headers.map((h, i) => (
-                  <div
-                    key={i}
-                    className="text-center font-bold truncate"
-                    style={{
-                      width: colW,
-                      fontSize,
-                      backgroundColor: "#107C41",
-                      color: "white",
-                      borderRight: showGrid ? "1px solid rgba(255,255,255,0.3)" : "none",
-                      padding: "1px 2px",
-                    }}
-                  >
-                    {h}
-                  </div>
-                ))}
+                {data.headers.map((h, ci) => {
+                  const fmt = data.headerFormats?.[ci];
+                  const hasCustomFill = fmt?.fillColor && fmt.fillColor !== "transparent" && fmt.fillColor !== "none";
+                  return (
+                    <div
+                      key={ci}
+                      className="text-center truncate"
+                      style={{
+                        width: colW,
+                        fontSize,
+                        fontWeight: fmt?.bold !== false ? "bold" : "normal",
+                        fontStyle: fmt?.italic ? "italic" : "normal",
+                        backgroundColor: hasCustomFill ? fmt!.fillColor! : "#107C41",
+                        color: fmt?.fontColor && fmt.fontColor !== "transparent" ? fmt.fontColor : (hasCustomFill ? "#1e293b" : "white"),
+                        borderRight: showGrid ? "1px solid rgba(0,0,0,0.15)" : "none",
+                        padding: "1px 2px",
+                      }}
+                    >
+                      {h}
+                    </div>
+                  );
+                })}
               </div>
               {/* Rows */}
               {data.rows.map((row, ri) => (
-                <div
-                  key={ri}
-                  className="flex"
-                  style={{ backgroundColor: ri % 2 === 0 ? "white" : "#f0fdf4" }}
-                >
+                <div key={ri} className="flex">
                   {showHeaders && (
                     <div
                       className="shrink-0 text-center"
-                      style={{
-                        width: colW * 0.3, fontSize,
-                        color: "#94a3b8",
-                        borderRight: "1px solid #e2e8f0",
-                        padding: "0.5px 1px",
-                      }}
+                      style={{ width: colW * 0.3, fontSize, color: "#94a3b8", borderRight: "1px solid #e2e8f0", padding: "0.5px 1px" }}
                     >
                       {ri + 1}
                     </div>
                   )}
-                  {data.headers.map((_, ci) => (
-                    <div
-                      key={ci}
-                      className="truncate"
-                      style={{
-                        width: colW,
-                        fontSize,
-                        borderRight: showGrid ? "1px solid #e2e8f0" : "none",
-                        borderBottom: showGrid ? "1px solid #f1f5f9" : "none",
-                        padding: "0.5px 2px",
-                        color: "#1e293b",
-                      }}
-                    >
-                      {row[ci] ?? ""}
-                    </div>
-                  ))}
+                  {data.headers.map((_, ci) => {
+                    const fmt = data.rowFormats?.[ri]?.[ci];
+                    const hasCustomFill = fmt?.fillColor && fmt.fillColor !== "transparent" && fmt.fillColor !== "none";
+                    const defaultBg = ri % 2 === 0 ? "white" : "#f8fafc";
+                    return (
+                      <div
+                        key={ci}
+                        className="truncate"
+                        style={{
+                          width: colW,
+                          fontSize,
+                          fontWeight: fmt?.bold ? "bold" : "normal",
+                          fontStyle: fmt?.italic ? "italic" : "normal",
+                          backgroundColor: hasCustomFill ? fmt!.fillColor! : defaultBg,
+                          color: fmt?.fontColor && fmt.fontColor !== "transparent" ? fmt.fontColor : "#1e293b",
+                          borderRight: showGrid ? "1px solid #e2e8f0" : "none",
+                          borderBottom: showGrid ? "1px solid #f1f5f9" : "none",
+                          padding: "0.5px 2px",
+                        }}
+                      >
+                        {row[ci] ?? ""}
+                      </div>
+                    );
+                  })}
                 </div>
               ))}
             </div>
@@ -242,7 +242,7 @@ export function SmartPrintCard({ selection, isWatching }: Props) {
   const [title,       setTitle]       = useState("");
   const [showGrid,    setShowGrid]    = useState(true);
   const [showHeaders, setShowHeaders] = useState(false);
-  const [data,        setData]        = useState<{ headers: string[]; rows: string[][] } | null>(null);
+  const [data,        setData]        = useState<SelectionValuesAndFormat | null>(null);
   const [loading,     setLoading]     = useState(false);
   const [showAdvanced,setShowAdvanced]= useState(false);
   const printRef = useRef<HTMLDivElement>(null);
@@ -252,7 +252,7 @@ export function SmartPrintCard({ selection, isWatching }: Props) {
   const loadData = useCallback(async () => {
     if (!isWatching) return;
     setLoading(true);
-    const result = await readSelectionValues();
+    const result = await readSelectionValuesAndFormat();
     if (result) setData(result);
     setLoading(false);
   }, [isWatching, selection?.shortAddress]);
@@ -277,35 +277,44 @@ export function SmartPrintCard({ selection, isWatching }: Props) {
     if (fit === "fit-width") fitCSS = `width: 100%;`;
     if (fit === "custom")    fitCSS = `transform: scale(${scale / 100}); transform-origin: top left;`;
 
+    // Build header cells with actual formats
+    const headerCells = data ? data.headers.map((h, ci) => {
+      const fmt = data.headerFormats?.[ci];
+      const hasFill = fmt?.fillColor && fmt.fillColor !== "transparent" && fmt.fillColor !== "none";
+      const bg    = hasFill ? fmt!.fillColor! : "#107C41";
+      const color = fmt?.fontColor && fmt.fontColor !== "transparent" ? fmt.fontColor : (hasFill ? "#1e293b" : "white");
+      const fw    = fmt?.bold !== false ? "700" : "400";
+      const fs    = fmt?.italic ? "italic" : "normal";
+      const border = showGrid ? "border: 1px solid rgba(0,0,0,0.15);" : "";
+      return `<th style="background:${bg};color:${color};font-weight:${fw};font-style:${fs};padding:5px 6px;text-align:center;width:${colWidthPct}%;${border}">${h}</th>`;
+    }).join("") : "";
+
+    // Build data rows with actual formats
+    const dataRows = data ? data.rows.map((row, ri) => {
+      const tds = data.headers.map((_, ci) => {
+        const fmt = data.rowFormats?.[ri]?.[ci];
+        const hasFill = fmt?.fillColor && fmt.fillColor !== "transparent" && fmt.fillColor !== "none";
+        const defaultBg = ri % 2 === 0 ? "white" : "#f8fafc";
+        const bg    = hasFill ? fmt!.fillColor! : defaultBg;
+        const color = fmt?.fontColor && fmt.fontColor !== "transparent" ? fmt.fontColor : "#1e293b";
+        const fw    = fmt?.bold ? "700" : "400";
+        const fs    = fmt?.italic ? "italic" : "normal";
+        const border = showGrid ? "border: 1px solid #e2e8f0;" : "";
+        return `<td style="background:${bg};color:${color};font-weight:${fw};font-style:${fs};padding:4px 6px;text-align:center;width:${colWidthPct}%;${border}">${row[ci] ?? ""}</td>`;
+      }).join("");
+      const rowNumTd = showHeaders ? `<td style="color:#94a3b8;font-size:8pt;padding:4px 3px;text-align:center;width:30px;${showGrid ? "border:1px solid #e2e8f0;" : ""}">${ri + 1}</td>` : "";
+      return `<tr>${rowNumTd}${tds}</tr>`;
+    }).join("") : "";
+
     pw2.document.write(`<!DOCTYPE html><html dir="auto"><head>
       <meta charset="UTF-8">
       <title>${title || "تقرير SniperSheet"}</title>
       <style>
-        @page {
-          margin: ${m.top}mm ${m.right}mm ${m.bottom}mm ${m.left}mm;
-          size: ${paper} ${orientation};
-        }
+        @page { margin: ${m.top}mm ${m.right}mm ${m.bottom}mm ${m.left}mm; size: ${paper} ${orientation}; }
         * { box-sizing: border-box; margin: 0; padding: 0; }
         body { font-family: 'Segoe UI', Tahoma, Arial, sans-serif; font-size: 10pt; ${fitCSS} }
-        h1.report-title {
-          text-align: center; font-size: 14pt; font-weight: 700;
-          color: #1a1a1a; border-bottom: 2px solid #107C41;
-          padding-bottom: 6px; margin-bottom: 10px;
-        }
+        h1.report-title { text-align: center; font-size: 14pt; font-weight: 700; color: #1a1a1a; border-bottom: 2px solid #107C41; padding-bottom: 6px; margin-bottom: 10px; }
         table { width: 100%; border-collapse: collapse; }
-        thead th {
-          background: #107C41; color: white; font-weight: 700;
-          padding: 5px 6px; text-align: center;
-          ${showGrid ? "border: 1px solid rgba(255,255,255,0.3);" : ""}
-          width: ${colWidthPct}%;
-        }
-        tbody td {
-          padding: 4px 6px; text-align: center;
-          ${showGrid ? "border: 1px solid #e2e8f0;" : ""}
-          width: ${colWidthPct}%;
-        }
-        tbody tr:nth-child(even) td { background: #f0fdf4; }
-        .row-num { color: #94a3b8; font-size: 8pt; ${showGrid ? "border-right: 1px solid #e2e8f0;" : ""} }
         .footer { margin-top: 8px; font-size: 7pt; color: #94a3b8; text-align: center; }
         @media print { .no-print { display: none; } }
       </style></head><body>
@@ -314,21 +323,13 @@ export function SmartPrintCard({ selection, isWatching }: Props) {
       <table>
         <thead>
           <tr>
-            ${showHeaders ? `<th style="width:30px">#</th>` : ""}
-            ${data.headers.map((h) => `<th>${h}</th>`).join("")}
+            ${showHeaders ? `<th style="width:30px;background:#e2e8f0;padding:5px 6px;">#</th>` : ""}
+            ${headerCells}
           </tr>
         </thead>
-        <tbody>
-          ${data.rows.map((row, ri) => `
-          <tr>
-            ${showHeaders ? `<td class="row-num">${ri + 1}</td>` : ""}
-            ${data!.headers.map((_, ci) => `<td>${row[ci] ?? ""}</td>`).join("")}
-          </tr>`).join("")}
-        </tbody>
+        <tbody>${dataRows}</tbody>
       </table>` : ""}
-      <div class="footer">
-        طُبع بواسطة SniperSheet · ${selection?.shortAddress ?? ""} · ${new Date().toLocaleString("ar-EG")}
-      </div>
+      <div class="footer">طُبع بواسطة SniperSheet · ${selection?.shortAddress ?? ""} · ${new Date().toLocaleString("ar-EG")}</div>
     </body></html>`);
     pw2.document.close();
     setTimeout(() => pw2.print(), 500);
