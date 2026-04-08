@@ -80,7 +80,8 @@ export async function insertFormulaInActiveCell(formula: string): Promise<Action
   try {
     await Excel.run(async (context: any) => {
       const cell = context.workbook.getActiveCell();
-      cell.values = [[formula.startsWith("=") ? formula : `=${formula}`]];
+      const f = formula.startsWith("=") ? formula : `=${formula}`;
+      cell.formulas = [[f]];
       await context.sync();
     });
     return { ok: true, message: "Formula inserted in active cell" };
@@ -95,7 +96,16 @@ export async function insertFormulaInAddress(formula: string, address: string): 
     await Excel.run(async (context: any) => {
       const sheet = context.workbook.worksheets.getActiveWorksheet();
       const range = sheet.getRange(address);
-      range.values = [[formula.startsWith("=") ? formula : `=${formula}`]];
+      range.load(["rowCount", "columnCount"]);
+      await context.sync();
+
+      const f = formula.startsWith("=") ? formula : `=${formula}`;
+      const numRows = range.rowCount;
+      const numCols = range.columnCount;
+
+      // Fill every cell in the range — Excel auto-adjusts relative references per cell
+      const matrix = Array.from({ length: numRows }, () => Array(numCols).fill(f));
+      range.formulas = matrix;
       await context.sync();
     });
     return { ok: true, message: `Formula inserted at ${address}` };
