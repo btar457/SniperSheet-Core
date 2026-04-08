@@ -60,3 +60,9 @@ id = "bi0CYbpN2UBSxZ7zAMzut"
 uri = "file://SniperSheet_Overview.md"
 type = "text"
 title = "SniperSheet — Full English Overview"
+
+[[outputs]]
+id = "UeUcaUE-pRjtKWSW4dEW_"
+uri = "file://SniperSheet_Brochure.pdf"
+type = "pdf"
+title = "SniperSheet — Professional Brochure PDF"
