@@ -174,10 +174,7 @@ function AIFormatBadge({ label, value }: { label: string; value: string | boolea
 
 async function callSmartFormat(description: string, cellRef?: string): Promise<AIFormatResult | null> {
   try {
-    const base = import.meta.env.BASE_URL?.replace(/\/$/, "") ?? "";
-    const apiBase = base ? base.replace(/\/[^/]*$/, "") : "";
-    const url = `${apiBase}/api/smart/format`;
-    const res = await fetch(url, {
+    const res = await fetch("/api/smart/format", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ description, cellRef }),

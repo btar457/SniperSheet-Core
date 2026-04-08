@@ -199,7 +199,7 @@ router.get("/manifest.xml", (_req, res): void => {
 });
 
 // ── Serve PNG icons ─────────────────────────────────────────────────────────
-function serveIcon(size: 16 | 32 | 80) {
+function serveIcon(size: 16 | 32 | 64 | 80) {
   return (_req: express.Request, res: express.Response): void => {
     const icon = ICONS[size];
     res.setHeader("Content-Type", "image/png");

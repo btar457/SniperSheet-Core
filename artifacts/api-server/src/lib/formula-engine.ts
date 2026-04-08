@@ -71,9 +71,9 @@ function colorHint(name: string, cond: string): StyleHint {
     بنفسجي: "#7B2D8B", purple: "#7B2D8B",
   };
   for (const [key, hex] of Object.entries(map)) {
-    if (name.includes(key)) return { target: "background", color: hex, condition: cond };
+    if (name.includes(key)) return { target: "fill", color: hex, condition: cond };
   }
-  return { target: "background", color: "#FFFF00", condition: cond };
+  return { target: "fill", color: "#FFFF00", condition: cond };
 }
 
 function computeValues(op: string, nums: number[]): string | null {
@@ -146,8 +146,8 @@ const RULES: Rule[] = [
         reasoning: `إذا كانت الدرجة ≥ ${threshold} تُعاد "${passLabel.replace(/"/g, "")}"، وإلا "${failLabel.replace(/"/g, "")}" | IF score ≥ ${threshold} return pass else fail`,
         formulaType: "conditional",
         styleHints: [
-          { target: "background", color: "#00AA00", bold: true, condition: `>=${threshold}` },
-          { target: "background", color: "#FF0000", bold: true, condition: `<${threshold}` },
+          { target: "fill", color: "#00AA00", bold: true, condition: `>=${threshold}` },
+          { target: "fill", color: "#FF0000", bold: true, condition: `<${threshold}` },
         ],
         confidence: 0.93,
       };
@@ -167,9 +167,9 @@ const RULES: Rule[] = [
         reasoning: `تصنيف الدرجات: ${t1}+ ممتاز، ${t2}+ جيد، ${t3}+ مقبول، ما دون ذلك ضعيف | Grade scale: ${t1}+ Excellent, ${t2}+ Good, ${t3}+ Acceptable`,
         formulaType: "conditional",
         styleHints: [
-          { target: "background", color: "#00AA00", condition: `>=${t1}` },
-          { target: "background", color: "#0070C0", condition: `>=${t2}` },
-          { target: "background", color: "#FFD700", condition: `>=${t3}` },
+          { target: "fill", color: "#00AA00", condition: `>=${t1}` },
+          { target: "fill", color: "#0070C0", condition: `>=${t2}` },
+          { target: "fill", color: "#FFD700", condition: `>=${t3}` },
         ],
         confidence: 0.9,
       };
@@ -514,7 +514,7 @@ const RULES: Rule[] = [
         result: null,
         reasoning: "تنسيق لوني مشروط — يُطبَّق عبر Conditional Formatting في Excel | Conditional color format — apply via Excel Conditional Formatting",
         formulaType: "formatting",
-        styleHints: hints.length > 0 ? hints : [{ target: "background", color: "#FFD700", condition: "value > 0" }],
+        styleHints: hints.length > 0 ? hints : [{ target: "fill", color: "#FFD700", condition: "value > 0" }],
         confidence: 0.8,
       };
     },

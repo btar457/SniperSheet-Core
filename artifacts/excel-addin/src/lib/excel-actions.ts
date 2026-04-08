@@ -543,6 +543,7 @@ export async function applyAIStyleHints(hints: AIStyleHint[]): Promise<ActionRes
   for (const hint of hints) {
     if (!hint.color) continue;
     const hex = resolveColor(hint.color);
+    const isFontColor = hint.target === "font";
 
     if (hint.condition) {
       // Parse condition like "value > 50" or "> 90"
@@ -562,20 +563,32 @@ export async function applyAIStyleHints(hints: AIStyleHint[]): Promise<ActionRes
         };
         const op = opMap[opStr] as ColorConditionRule["operator"];
         if (op) {
-          const r = await applyConditionalColorToSelection({ operator: op, value: val, fillColor: hex });
-          if (r.ok) results.push(`Conditional color applied`);
+          const r = await applyConditionalColorToSelection({
+            operator: op, value: val, fillColor: hex,
+            fontColor: isFontColor ? hex : undefined,
+          });
+          if (r.ok) results.push("Conditional color applied");
         }
       }
+    } else if (isFontColor) {
+      // Apply font (text) color
+      const r = await applySelectionFormat({ fontColor: hex });
+      if (r.ok) results.push(`Font color ${hex} applied`);
     } else {
-      // Solid fill color
+      // Apply fill (background) color
       const r = await applyFillColorToSelection(hex);
       if (r.ok) results.push(`Fill color ${hex} applied`);
     }
 
     // Bold
-    if (hint.bold) {
+    if (hint.bold === true) {
       await applySelectionFormat({ bold: true });
       results.push("Bold applied");
+    }
+    // Italic
+    if (hint.italic === true) {
+      await applySelectionFormat({ italic: true });
+      results.push("Italic applied");
     }
   }
 
