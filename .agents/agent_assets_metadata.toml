@@ -54,3 +54,9 @@ id = "4rgQgq6uN_UscQTefQ8gI"
 uri = "file://SniperSheet_manifest.xml"
 type = "unspecified"
 title = "SniperSheet Manifest v1.2.0.0"
+
+[[outputs]]
+id = "bi0CYbpN2UBSxZ7zAMzut"
+uri = "file://SniperSheet_Overview.md"
+type = "text"
+title = "SniperSheet — Full English Overview"
