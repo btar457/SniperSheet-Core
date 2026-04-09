@@ -16,9 +16,9 @@ const ROOT   = path.dirname(path.dirname(fileURLToPath(import.meta.url)));
 const ADDIN  = path.join(ROOT, "artifacts", "excel-addin");
 const SERVER = path.join(ROOT, "artifacts", "api-server");
 
-function run(cmd, cwd = ROOT) {
+function run(cmd, cwd = ROOT, extraEnv = {}) {
   console.log(`\n> ${cmd}`);
-  execSync(cmd, { cwd, stdio: "inherit" });
+  execSync(cmd, { cwd, stdio: "inherit", env: { ...process.env, ...extraEnv } });
 }
 
 console.log("=== SniperSheet Azure Build ===\n");
@@ -30,7 +30,8 @@ run("pnpm install --frozen-lockfile");
 run("pnpm exec tsc --build", path.join(ROOT, "lib", "api-client-react"));
 
 // 3. Build the React frontend (Excel Add-in)
-run("pnpm run build", ADDIN);
+//    PORT and BASE_PATH are required by vite.config.ts even during static build
+run("pnpm run build", ADDIN, { PORT: "8080", BASE_PATH: "/" });
 const frontendDist = path.join(ADDIN, "dist", "public");
 
 // 4. Copy frontend build into the API server output directory
