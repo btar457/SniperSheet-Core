@@ -1,5 +1,5 @@
 # SniperSheet — Azure App Service Deployment
-# esbuild bundles everything into dist/index.mjs — no node_modules needed on Azure
+# Automatically configures environment variables on Azure after each deploy
 
 name: Build and deploy Node.js app to Azure Web App - SniperSheet-Core
 
@@ -36,14 +36,13 @@ jobs:
         env:
           NODE_ENV: production
           BASE_PATH: /
+          PORT: "8080"
           VITE_APP_TOKEN: ${{ secrets.VITE_APP_TOKEN }}
 
       - name: Prepare deployment package
         run: |
           mkdir deploy
-          # esbuild bundles all code — only dist/ is needed
           cp -r artifacts/api-server/dist deploy/dist
-          # Minimal package.json with start script for Azure
           echo '{"name":"snipersheet","version":"1.0.0","type":"module","scripts":{"start":"node dist/index.mjs"}}' > deploy/package.json
 
       - name: Upload artifact
@@ -72,10 +71,29 @@ jobs:
           tenant-id: ${{ secrets.AZUREAPPSERVICE_TENANTID_753E4EAD3B9840138B12D6C794F479AC }}
           subscription-id: ${{ secrets.AZUREAPPSERVICE_SUBSCRIPTIONID_FCF84435F434490DA3A2E2A8B20D244F }}
 
+      - name: Configure Azure App Settings
+        run: |
+          az webapp config appsettings set \
+            --name SniperSheet-Core \
+            --resource-group SniperSheet_Group \
+            --settings \
+              NODE_ENV=production \
+              SNIPER_APP_TOKEN=${{ secrets.VITE_APP_TOKEN }} \
+              GROQ_API_KEY=${{ secrets.GROQ_API_KEY }} \
+              SESSION_SECRET=${{ secrets.SESSION_SECRET }} \
+              SCM_DO_BUILD_DURING_DEPLOYMENT=false \
+              WEBSITE_NODE_DEFAULT_VERSION="~20"
+
+      - name: Set startup command
+        run: |
+          az webapp config set \
+            --name SniperSheet-Core \
+            --resource-group SniperSheet_Group \
+            --startup-file "node dist/index.mjs"
+
       - name: Deploy to Azure Web App
         uses: azure/webapps-deploy@v3
         with:
           app-name: 'SniperSheet-Core'
           slot-name: 'Production'
           package: .
-          startup-command: 'node dist/index.mjs'
