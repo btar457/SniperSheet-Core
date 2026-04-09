@@ -1,6 +1,3 @@
-# SniperSheet — Azure App Service Deployment
-# Automatically configures environment variables on Azure after each deploy
-
 name: Build and deploy Node.js app to Azure Web App - SniperSheet-Core
 
 on:
@@ -44,12 +41,13 @@ jobs:
           mkdir deploy
           cp -r artifacts/api-server/dist deploy/dist
           echo '{"name":"snipersheet","version":"1.0.0","type":"module","scripts":{"start":"node dist/index.mjs"}}' > deploy/package.json
+          cd deploy && zip -r ../app.zip . && cd ..
 
-      - name: Upload artifact
+      - name: Upload zip artifact
         uses: actions/upload-artifact@v4
         with:
           name: node-app
-          path: deploy
+          path: app.zip
 
   deploy:
     runs-on: ubuntu-latest
@@ -91,9 +89,24 @@ jobs:
             --resource-group SniperSheet_Group \
             --startup-file "node dist/index.mjs"
 
-      - name: Deploy to Azure Web App
-        uses: azure/webapps-deploy@v3
-        with:
-          app-name: 'SniperSheet-Core'
-          slot-name: 'Production'
-          package: .
+      - name: Start web app before deploy
+        run: |
+          az webapp start \
+            --name SniperSheet-Core \
+            --resource-group SniperSheet_Group
+          sleep 10
+
+      - name: Deploy via Azure CLI
+        run: |
+          az webapp deploy \
+            --name SniperSheet-Core \
+            --resource-group SniperSheet_Group \
+            --src-path app.zip \
+            --type zip \
+            --async false
+
+      - name: Restart web app
+        run: |
+          az webapp restart \
+            --name SniperSheet-Core \
+            --resource-group SniperSheet_Group
