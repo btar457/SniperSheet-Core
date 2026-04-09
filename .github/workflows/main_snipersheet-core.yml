@@ -1,5 +1,5 @@
 # SniperSheet — Azure App Service Deployment
-# Auto-corrected to use pnpm monorepo build
+# esbuild bundles everything into dist/index.mjs — no node_modules needed on Azure
 
 name: Build and deploy Node.js app to Azure Web App - SniperSheet-Core
 
@@ -28,35 +28,29 @@ jobs:
         with:
           version: '10'
 
-      - name: Install dependencies
+      - name: Install all workspace dependencies
         run: pnpm install --frozen-lockfile
 
-      - name: Build project for Azure
+      - name: Build SniperSheet for Azure
         run: node scripts/build-azure.mjs
         env:
           NODE_ENV: production
           BASE_PATH: /
           VITE_APP_TOKEN: ${{ secrets.VITE_APP_TOKEN }}
 
-      - name: Package deployment artifact
+      - name: Prepare deployment package
         run: |
-          mkdir -p deploy-pkg
-          cp -r artifacts/api-server/dist deploy-pkg/dist
-          cp artifacts/api-server/package.json deploy-pkg/package.json
-          # Startup helper
-          cat > deploy-pkg/startup.sh << 'SH'
-          #!/bin/bash
-          cd /home/site/wwwroot
-          node dist/index.mjs
-          SH
-          chmod +x deploy-pkg/startup.sh
-          cd deploy-pkg && npm install --omit=dev --legacy-peer-deps
+          mkdir deploy
+          # esbuild bundles all code — only dist/ is needed
+          cp -r artifacts/api-server/dist deploy/dist
+          # Minimal package.json with start script for Azure
+          echo '{"name":"snipersheet","version":"1.0.0","type":"module","scripts":{"start":"node dist/index.mjs"}}' > deploy/package.json
 
-      - name: Upload artifact for deployment
+      - name: Upload artifact
         uses: actions/upload-artifact@v4
         with:
           name: node-app
-          path: deploy-pkg
+          path: deploy
 
   deploy:
     runs-on: ubuntu-latest
