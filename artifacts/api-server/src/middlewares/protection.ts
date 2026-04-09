@@ -52,7 +52,9 @@ export function corsProtection() {
       ALLOWED_ORIGINS.has(origin) ||
       /^https:\/\/[\w.-]+\.microsoft\.com$/.test(origin) ||
       /^https:\/\/[\w.-]+\.officeapps\.live\.com$/.test(origin) ||
-      /^https:\/\/[\w.-]+\.office\.com$/.test(origin);
+      /^https:\/\/[\w.-]+\.office\.com$/.test(origin) ||
+      /^https:\/\/[\w-]+\.azurewebsites\.net$/.test(origin) ||
+      /^https:\/\/[\w.-]+\.azurestaticapps\.net$/.test(origin);
 
     if (isAllowed) {
       res.setHeader("Access-Control-Allow-Origin", origin);

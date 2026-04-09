@@ -1,0 +1,104 @@
+name: Deploy SniperSheet to Azure App Service
+
+on:
+  push:
+    branches:
+      - main
+  workflow_dispatch:   # allow manual trigger from GitHub Actions tab
+
+# ── Environment ──────────────────────────────────────────────────────────────
+env:
+  NODE_VERSION: "20.x"
+  PNPM_VERSION: "10"
+  AZURE_WEBAPP_NAME: "snipersheet"      # ← change this to your App Service name
+  AZURE_WEBAPP_PACKAGE_PATH: "."
+
+jobs:
+  build-and-deploy:
+    name: Build & Deploy
+    runs-on: ubuntu-latest
+
+    steps:
+      # 1. Checkout source code
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      # 2. Set up Node.js
+      - name: Set up Node.js ${{ env.NODE_VERSION }}
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+
+      # 3. Set up pnpm
+      - name: Set up pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: ${{ env.PNPM_VERSION }}
+
+      # 4. Get pnpm store path for caching
+      - name: Get pnpm store path
+        id: pnpm-cache
+        run: echo "STORE_PATH=$(pnpm store path --silent)" >> $GITHUB_OUTPUT
+
+      # 5. Cache pnpm dependencies
+      - name: Cache pnpm dependencies
+        uses: actions/cache@v4
+        with:
+          path: ${{ steps.pnpm-cache.outputs.STORE_PATH }}
+          key: ${{ runner.os }}-pnpm-${{ hashFiles('**/pnpm-lock.yaml') }}
+          restore-keys: |
+            ${{ runner.os }}-pnpm-
+
+      # 6. Run the unified Azure build script
+      - name: Build SniperSheet for Azure
+        run: node scripts/build-azure.mjs
+        env:
+          NODE_ENV: production
+          VITE_APP_TOKEN: ${{ secrets.VITE_APP_TOKEN }}
+          BASE_PATH: /
+
+      # 7. Package deployment artifact
+      #    We only ship what Azure needs: the compiled server + bundled assets
+      - name: Create deployment package
+        run: |
+          mkdir -p azure-deploy
+          # Server bundle
+          cp -r artifacts/api-server/dist   azure-deploy/dist
+          cp    artifacts/api-server/package.json azure-deploy/package.json
+          # Root workspace files needed to resolve pnpm workspaces
+          cp package.json azure-deploy/root-package.json
+
+          # Create a minimal package.json for Azure that starts the server
+          cat > azure-deploy/package.json <<'PKGJSON'
+          {
+            "name": "snipersheet-azure",
+            "version": "1.0.0",
+            "type": "module",
+            "scripts": {
+              "start": "node dist/index.mjs"
+            },
+            "dependencies": {
+              "express": "^5.2.1",
+              "express-rate-limit": "^8.3.2",
+              "pino": "^9.6.0",
+              "pino-http": "^10.4.0",
+              "@groq-sdk/groq-sdk": "*",
+              "groq-sdk": "^0.13.0",
+              "zod": "^3.24.2",
+              "cors": "^2.8.5"
+            }
+          }
+          PKGJSON
+
+      # 8. Install production dependencies inside the deploy package
+      - name: Install production dependencies
+        run: npm install --omit=dev
+        working-directory: azure-deploy
+
+      # 9. Deploy to Azure App Service
+      - name: Deploy to Azure App Service
+        uses: azure/webapps-deploy@v3
+        with:
+          app-name: ${{ env.AZURE_WEBAPP_NAME }}
+          publish-profile: ${{ secrets.AZURE_WEBAPP_PUBLISH_PROFILE }}
+          package: azure-deploy
